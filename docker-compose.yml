@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+
+  sql.data:
+    image: microsoft/mssql-server-linux:2017-latest
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
+  catalog.api:
+    image: cdis-capacitacion/catalog.api
+    build:
+      context: ./src/Services/Catalog/Catalog.API
+      dockerfile: Dockerfile 
+    restart: on-failure   
+    depends_on:
+      - sql.data
+      - rabbitmq

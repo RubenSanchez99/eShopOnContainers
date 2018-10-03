@@ -9,15 +9,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+// Para el evento
+using Catalog.API.IntegrationEvents.Events;
+using NServiceBus;
+
 namespace Catalog.API.Controllers
 {
     [Route("api/v1/[controller]")]
     public class CatalogController : ControllerBase
     {
         private readonly CatalogContext _catalogContext;
+        private readonly IEndpointInstance _endpoint;
 
-        public CatalogController(CatalogContext context)
+        public CatalogController(CatalogContext context, IEndpointInstance endpoint)
         {
+            _endpoint = endpoint;
             _catalogContext = context ?? throw new ArgumentNullException(nameof(context));
             ((DbContext)context).ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
@@ -157,8 +163,17 @@ namespace Catalog.API.Controllers
             catalogItem = productToUpdate;
             _catalogContext.CatalogItems.Update(catalogItem);
 
-            // Aquí se hará el cambio
-            await _catalogContext.SaveChangesAsync();
+            if (raiseProductPriceChangedEvent) // Save and publish integration event if price has changed
+            {
+                //Create Integration Event to be published through the Event Bus
+                var priceChangedEvent = new ProductPriceChangedIntegrationEvent(catalogItem.Id, productToUpdate.Price, oldPrice);
+                 // Publish through the Event Bus
+                await _endpoint.Publish(priceChangedEvent);
+            }
+            else // Save updated product
+            {
+                await _catalogContext.SaveChangesAsync();
+            }
 
             return CreatedAtAction(nameof(GetItemById), new { id = productToUpdate.Id }, null);
         }

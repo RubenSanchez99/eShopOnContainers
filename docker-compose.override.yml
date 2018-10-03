@@ -1,0 +1,23 @@
+version: '3.7'
+
+services:
+
+  sql.data:
+    environment:
+      - MSSQL_SA_PASSWORD=Pass@word
+      - ACCEPT_EULA=Y
+      - MSSQL_PID=Developer
+    ports:
+      - "5433:1433"
+
+  catalog.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      - ConnectionString=${ESHOP_AZURE_CATALOG_DB:-Server=tcp:sql.data;Initial Catalog=CapacitacionMicroservicios.CatalogDb;User Id=sa;Password=Pass@word}
+      - EventBusConnection=${ESHOP_AZURE_SERVICE_BUS:-rabbitmq}
+      - EventBusUserName=guest
+      - EventBusPassword=guest        
+      - UseCustomizationData=True
+    ports:
+      - "5101:80"

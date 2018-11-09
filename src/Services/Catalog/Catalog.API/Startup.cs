@@ -17,13 +17,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Reflection;
 
-// Para NServiceBus
+// Para MassTransit
+using Catalog.API.Services;
+using MassTransit;
+using MassTransit.RabbitMqTransport;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using NServiceBus;
-using NServiceBus.Persistence.Sql;
-using Polly;
-using System.Data.SqlClient;
+using Microsoft.Extensions.Hosting;
 
 namespace Catalog.API
 {
@@ -61,24 +61,39 @@ namespace Catalog.API
             services.AddCors(options =>
             {
                 options.AddPolicy("CorsPolicy",
-                    builder => builder.AllowAnyOrigin()
+                    policyBuilder => policyBuilder.AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader()
                     .AllowCredentials());
             });
 
-            var containerBuilder = new ContainerBuilder();
+            // Configurar MassTransit
+            services.AddScoped<IHostedService, MassTransitHostedService>();
 
-            containerBuilder.Populate(services);
+            var builder = new ContainerBuilder(); 
 
-            // NServiceBus
-            var container = RegisterEventBus(containerBuilder);
+            builder.Register(c =>
+            {
+                return Bus.Factory.CreateUsingRabbitMq(sbc => 
+                    sbc.Host("localhost","dev", h =>
+                    {
+                        h.Username(Configuration["EventBusUserName"]);
+                        h.Password(Configuration["EventBusPassword"]);
+                    })
+                );
+            })
+            .As<IBusControl>()
+            .As<IPublishEndpoint>()
+            .SingleInstance();
+            builder.Populate(services);
+            var container = builder.Build();
 
+            // Create the IServiceProvider based on the container.
             return new AutofacServiceProvider(container);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, CatalogContext db)
+        public void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env, CatalogContext db)
         {
             if (env.IsDevelopment())
             {
@@ -95,102 +110,6 @@ namespace Catalog.API
             app.UseCors("CorsPolicy");
 
             db.Database.Migrate();
-        }
-
-        private IContainer RegisterEventBus(ContainerBuilder containerBuilder)
-        {
-
-            IEndpointInstance endpoint = null;
-            containerBuilder.Register(c => endpoint)
-                .As<IEndpointInstance>()
-                .SingleInstance();
-
-            var container = containerBuilder.Build();
-
-            var endpointConfiguration = new EndpointConfiguration("Catalog");
-
-            // Configure RabbitMQ transport
-            var transport = endpointConfiguration.UseTransport<RabbitMQTransport>();
-            transport.UseConventionalRoutingTopology();
-            transport.ConnectionString(GetRabbitConnectionString());
-
-            // Configure persistence
-            var persistence = endpointConfiguration.UsePersistence<SqlPersistence>();
-            persistence.SqlDialect<SqlDialect.MsSqlServer>();
-            persistence.ConnectionBuilder(connectionBuilder:
-                () => new SqlConnection(Configuration["ConnectionString"]));
-
-            // Use JSON.NET serializer
-            endpointConfiguration.UseSerialization<NewtonsoftSerializer>();
-
-            // Enable the Outbox.
-            endpointConfiguration.EnableOutbox();
-
-            // Make sure NServiceBus creates queues in RabbitMQ, tables in SQL Server, etc.
-            // You might want to turn this off in production, so that DevOps can use scripts to create these.
-            endpointConfiguration.EnableInstallers();
-
-            // Turn on auditing.
-            endpointConfiguration.AuditProcessedMessagesTo("audit");
-
-            // Define conventions
-            var conventions = endpointConfiguration.Conventions();
-            conventions.DefiningEventsAs(c => c.Namespace != null && c.Name.EndsWith("IntegrationEvent"));
-
-            // Configure the DI container.
-            endpointConfiguration.UseContainer<AutofacBuilder>(customizations: customizations =>
-            {
-                customizations.ExistingLifetimeScope(container);
-            });
-
-            // Start the endpoint and register it with ASP.NET Core DI
-            endpoint = Endpoint.Start(endpointConfiguration).GetAwaiter().GetResult();
-
-            return container;
-        }
-
-        void EnsureSqlDatabaseExists()
-        {
-            var builder = new SqlConnectionStringBuilder(Configuration["ConnectionString"]);
-            var originalCatalog = builder.InitialCatalog;
-
-            builder.InitialCatalog = "master";
-            var masterConnectionString = builder.ConnectionString;
-
-            using (var connection = new SqlConnection(masterConnectionString))
-            {
-                connection.Open();
-                var command = connection.CreateCommand();
-                command.CommandText =
-                    $"IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = '{originalCatalog}')" +
-                    $"  CREATE DATABASE [{originalCatalog}]";
-                command.ExecuteNonQuery();
-            }
-        }
-
-        private string GetRabbitConnectionString()
-        {
-            var host = Configuration["EventBusConnection"];
-            var user = Configuration["EventBusUserName"];
-            var password = Configuration["EventBusPassword"];
-
-            if (string.IsNullOrEmpty(user))
-                return $"host={host}";
-
-            return $"host={host};username={user};password={password};";
-        }
-
-        private Policy CreatePolicy(int retries, ILogger logger, string prefix)
-        {
-            return Policy.Handle<SqlException>().
-                WaitAndRetryAsync(
-                    retryCount: retries,
-                    sleepDurationProvider: retry => TimeSpan.FromSeconds(5),
-                    onRetry: (exception, timeSpan, retry, ctx) =>
-                    {
-                        logger.LogTrace($"[{prefix}] Exception {exception.GetType().Name} with message ${exception.Message} detected on attempt {retry} of {retries}");
-                    }
-                );
         }
     }
 }

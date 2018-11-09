@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 // Para el evento
 using Catalog.API.IntegrationEvents.Events;
-using NServiceBus;
+using MassTransit;
 
 namespace Catalog.API.Controllers
 {
@@ -19,9 +19,9 @@ namespace Catalog.API.Controllers
     public class CatalogController : ControllerBase
     {
         private readonly CatalogContext _catalogContext;
-        private readonly IEndpointInstance _endpoint;
+        private readonly IPublishEndpoint _endpoint;
 
-        public CatalogController(CatalogContext context, IEndpointInstance endpoint)
+        public CatalogController(CatalogContext context, IPublishEndpoint endpoint)
         {
             _endpoint = endpoint;
             _catalogContext = context ?? throw new ArgumentNullException(nameof(context));
@@ -165,10 +165,12 @@ namespace Catalog.API.Controllers
 
             if (raiseProductPriceChangedEvent) // Save and publish integration event if price has changed
             {
-                //Create Integration Event to be published through the Event Bus
-                var priceChangedEvent = new ProductPriceChangedIntegrationEvent(catalogItem.Id, productToUpdate.Price, oldPrice);
                  // Publish through the Event Bus
-                await _endpoint.Publish(priceChangedEvent);
+                await _endpoint.Publish<ProductPriceChangedIntegrationEvent>(new {
+                    ProductId = catalogItem.Id,
+                    NewPrice = productToUpdate.Price,
+                    OldPrice = oldPrice
+                });
             }
             else // Save updated product
             {

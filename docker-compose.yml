@@ -2,14 +2,17 @@ version: '3.7'
 
 services:
 
-  sql.data:
-    image: microsoft/mssql-server-linux:2017-latest
+  identity.api:
+    image: eshop/identity.api:${TAG:-latest}
+    build:
+      context: ./src/Services/Identity/Identity.API
+      dockerfile: Dockerfile    
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    ports:
-      - "15672:15672"
-      - "5672:5672"
+  basket.api:
+    image: cdis-capacitacion/basket.api
+    build:
+      context: ./src/Services/Basket/Basket.API
+      dockerfile: Dockerfile    
 
   catalog.api:
     image: cdis-capacitacion/catalog.api
@@ -17,6 +20,15 @@ services:
       context: ./src/Services/Catalog/Catalog.API
       dockerfile: Dockerfile 
     restart: on-failure   
-    depends_on:
-      - sql.data
-      - rabbitmq
+
+  webshoppingapigw:
+    image: eshop/ocelotapigw:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: src/ApiGateways/ApiGw-Base/Dockerfile
+
+  webshoppingagg:
+    image: eshop/webshoppingagg:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: src/ApiGateways/Web.Bff.Shopping/aggregator/Dockerfile

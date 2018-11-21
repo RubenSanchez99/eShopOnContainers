@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 // Para el evento
-using Catalog.API.IntegrationEvents.Events;
+using eShopOnContainers.Services.IntegrationEvents.Events;
 using MassTransit;
 
 namespace Catalog.API.Controllers
@@ -31,9 +31,13 @@ namespace Catalog.API.Controllers
         // GET api/v1/[controller]/items[?pageSize=3&pageIndex=10]
         [HttpGet]
         [Route("[action]")]
-        public async Task<IActionResult> Items([FromQuery]int pageSize = 10, [FromQuery]int pageIndex = 0)
-
+        public async Task<IActionResult> Items([FromQuery]int pageSize = 10, [FromQuery]int pageIndex = 0, [FromQuery] string ids = null)
         {
+            if (!string.IsNullOrEmpty(ids))
+            {
+                return GetItemsByIds(ids);
+            }
+
             var totalItems = await _catalogContext.CatalogItems
                 .LongCountAsync();
 
@@ -47,6 +51,24 @@ namespace Catalog.API.Controllers
                 pageIndex, pageSize, totalItems, itemsOnPage);
 
             return Ok(model);
+        }
+
+        private IActionResult GetItemsByIds(string ids)
+        {
+            var numIds = ids.Split(',')
+                .Select(id => (Ok: int.TryParse(id, out int x), Value: x));
+
+            if (!numIds.All(nid => nid.Ok))
+            {
+                return BadRequest("ids value invalid. Must be comma-separated list of numbers");
+            }
+
+            var idsToSelect = numIds
+                .Select(id => id.Value);
+
+            var items = _catalogContext.CatalogItems.Where(ci => idsToSelect.Contains(ci.Id)).ToList();
+
+            return Ok(items);
         }
 
         [HttpGet]
@@ -172,10 +194,8 @@ namespace Catalog.API.Controllers
                     OldPrice = oldPrice
                 });
             }
-            else // Save updated product
-            {
-                await _catalogContext.SaveChangesAsync();
-            }
+
+            await _catalogContext.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetItemById), new { id = productToUpdate.Id }, null);
         }

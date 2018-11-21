@@ -1,4 +1,4 @@
-namespace Catalog.API.IntegrationEvents.Events
+namespace eShopOnContainers.Services.IntegrationEvents.Events
 {
     public interface ProductPriceChangedIntegrationEvent
     {

@@ -75,10 +75,10 @@ namespace Catalog.API
             builder.Register(c =>
             {
                 return Bus.Factory.CreateUsingRabbitMq(sbc => 
-                    sbc.Host("localhost","dev", h =>
+                    sbc.Host(new Uri("rabbitmq://rabbitmq"), h =>
                     {
-                        h.Username(Configuration["EventBusUserName"]);
-                        h.Password(Configuration["EventBusPassword"]);
+                        h.Username("guest");
+                        h.Password("guest");
                     })
                 );
             })

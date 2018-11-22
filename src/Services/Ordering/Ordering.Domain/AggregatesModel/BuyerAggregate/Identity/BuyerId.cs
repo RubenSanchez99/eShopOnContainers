@@ -3,10 +3,15 @@ using EventFlow.Core;
 
 namespace Ordering.Domain.AggregatesModel.BuyerAggregate.Identity
 {
-    public class BuyerId : Identity<BuyerId>
+    public class BuyerId : IIdentity
     {
-        public BuyerId(string value) : base(value)
+        private Guid _value;
+
+        public BuyerId(Guid guid)
         {
+            _value = guid;
         }
+
+        public string Value => _value.ToString();
     }
 }

@@ -11,6 +11,10 @@
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.3.0"/>
     <PackageReference Include="EventFlow.TestHelpers" Version="0.67.3697"/>
     <PackageReference Include="EventFlow.AspNetCore" Version="0.67.3697"/>
+    <PackageReference Include="MassTransit" Version="5.1.5"/>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="5.1.5"/>
+    <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="5.1.5"/>
+    <PackageReference Include="MassTransit.Autofac" Version="5.1.5"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ordering.Domain\Ordering.Domain.csproj"/>

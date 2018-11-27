@@ -12,6 +12,11 @@ namespace Ordering.Domain.AggregatesModel.BuyerAggregate.Identity
             _value = guid;
         }
 
+        public BuyerId(string id)
+        {
+            _value = Guid.Parse(id);
+        }
+
         public string Value => _value.ToString();
     }
 }

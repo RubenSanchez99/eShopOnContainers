@@ -28,6 +28,9 @@ services:
       - "5101:80"
 
   basket.api:
+    #build:
+    #  dockerfile: Dockerfile-debug
+    #  target: debug
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
@@ -40,6 +43,18 @@ services:
       - EventBusPassword=guest
     ports:
       - "5103:80"
+
+  ordering.api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:80
+      - ConnectionString=Server=sql.data;Initial Catalog=CapacitacionMicroservicios.OrderingDb;User Id=sa;Password=Pass@word
+      - EventBusConnection=rabbitmq
+      - EventBusUserName=guest
+      - EventBusPassword=guest  
+      - EVENTSTORE_URL=tcp://admin:changeit@eventstore:1113
+    ports:
+      - "5104:80"
 
   webshoppingagg:
     environment:

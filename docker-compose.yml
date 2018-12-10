@@ -32,3 +32,9 @@ services:
     build:
       context: .
       dockerfile: src/ApiGateways/Web.Bff.Shopping/aggregator/Dockerfile
+
+  ordering.api:
+    image: cdis-capacitacion/ordering.api:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: src/Services/Ordering/Ordering.API/Dockerfile

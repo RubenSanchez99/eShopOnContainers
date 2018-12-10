@@ -7,31 +7,31 @@ namespace eShopOnContainers.Services.IntegrationEvents.Events
     {
         string UserId { get; }
 
-        int OrderNumber { get; }
+        string UserName { get; }
 
-        string City { get; }
+        string City { get; set; }
 
-        string Street { get; }
+        string Street { get; set; }
 
-        string State { get; }
+        string State { get; set; }
 
-        string Country { get; }
+        string Country { get; set; }
 
-        string ZipCode { get; }
+        string ZipCode { get; set; }
 
-        string CardNumber { get; }
+        string CardNumber { get; set; }
 
-        string CardHolderName { get; }
+        string CardHolderName { get; set; }
 
-        DateTime CardExpiration { get; }
+        DateTime CardExpiration { get; set; }
 
-        string CardSecurityNumber { get; }
+        string CardSecurityNumber { get; set; }
 
-        int CardTypeId { get; }
+        int CardTypeId { get; set; }
 
-        string Buyer { get; }
+        string Buyer { get; set; }
 
-        Guid RequestId { get; }
+        Guid RequestId { get; set; }
 
         CustomerBasket Basket { get; }
     }

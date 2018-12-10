@@ -29,12 +29,14 @@ namespace Catalog.API
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             Configuration = configuration;
+            _loggerFactory = loggerFactory;
         }
 
         public IConfiguration Configuration { get; }
+        private ILoggerFactory _loggerFactory { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public IServiceProvider ConfigureServices(IServiceCollection services)
@@ -74,13 +76,23 @@ namespace Catalog.API
 
             builder.Register(c =>
             {
-                return Bus.Factory.CreateUsingRabbitMq(sbc => 
-                    sbc.Host(new Uri("rabbitmq://rabbitmq"), h =>
+                var busControl = Bus.Factory.CreateUsingRabbitMq(sbc => 
                     {
-                        h.Username("guest");
-                        h.Password("guest");
-                    })
+                        var host = sbc.Host(new Uri("rabbitmq://rabbitmq"), h =>
+                        {
+                            h.Username("guest");
+                            h.Password("guest");
+                        });
+                        sbc.UseExtensionsLogging(_loggerFactory);
+                    }
                 );
+                var consumeObserver = new ConsumeObserver(_loggerFactory.CreateLogger<ConsumeObserver>());
+                busControl.ConnectConsumeObserver(consumeObserver);
+
+                var sendObserver = new SendObserver(_loggerFactory.CreateLogger<SendObserver>());
+                busControl.ConnectSendObserver(sendObserver);
+
+                return busControl;
             })
             .As<IBusControl>()
             .As<IPublishEndpoint>()

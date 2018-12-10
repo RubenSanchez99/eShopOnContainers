@@ -6,6 +6,8 @@ using System;
 using System.Threading.Tasks;
 using eShopOnContainers.Services.IntegrationEvents.Events;
 using MassTransit;
+using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 
 namespace Basket.API.Controllers
 {
@@ -16,13 +18,15 @@ namespace Basket.API.Controllers
         private readonly IBasketRepository _repository;
         private readonly IIdentityService _identitySvc;
         private readonly IPublishEndpoint _endpoint;
+        private readonly ILogger<BasketController> _log;
 
         public BasketController(IBasketRepository repository, 
-            IIdentityService identityService, IPublishEndpoint endpoint)
+            IIdentityService identityService, IPublishEndpoint endpoint, ILogger<BasketController> log)
         {
             _repository = repository;
             _identitySvc = identityService;
             _endpoint = endpoint;
+            _log = log;
         }
         // GET /id
         [HttpGet("{id}")]
@@ -52,11 +56,19 @@ namespace Basket.API.Controllers
 
             var basket = await _repository.GetBasketAsync(userId);
 
+            if (basket == null)
+            {
+                return BadRequest();
+            }
+            
+            var userName = User.FindFirst(x => x.Type == "unique_name").Value;
+
             // Once basket is checkout, sends an integration event to
             // ordering.api to convert basket to order and proceeds with
             // order creation process
             await _endpoint.Publish<UserCheckoutAcceptedIntegrationEvent>(new {
                 UserId = userId,
+                UserName = userName,
                 City = basketCheckout.City,
                 Street = basketCheckout.Street,
                 State = basketCheckout.State,
@@ -69,13 +81,8 @@ namespace Basket.API.Controllers
                 CardTypeId = basketCheckout.CardTypeId,
                 Buyer = basketCheckout.Buyer,
                 Basket = basket,
-                RequestId = requestId
+                RequestId = basketCheckout.RequestId
             });
-
-            if (basket == null)
-            {
-                return BadRequest();
-            }
 
             return Accepted();
         }

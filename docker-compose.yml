@@ -38,3 +38,9 @@ services:
     build:
       context: .
       dockerfile: src/Services/Ordering/Ordering.API/Dockerfile
+
+  payment.api:
+    image: cdis-capacitacion/payment.api
+    build:
+      context: ./src/Services/Payment/Payment.API
+      dockerfile: Dockerfile   

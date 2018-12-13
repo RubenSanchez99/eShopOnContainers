@@ -24,6 +24,7 @@ using MassTransit.RabbitMqTransport;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Catalog.API.IntegrationEvents.EventHandling;
 
 namespace Catalog.API
 {
@@ -74,6 +75,9 @@ namespace Catalog.API
 
             var builder = new ContainerBuilder(); 
 
+            services.AddScoped<OrderStatusChangedToAwaitingValidationIntegrationEventHandler>();
+            services.AddScoped<OrderStatusChangedToPaidIntegrationEventHandler>();
+
             builder.Register(c =>
             {
                 var busControl = Bus.Factory.CreateUsingRabbitMq(sbc => 
@@ -82,6 +86,14 @@ namespace Catalog.API
                         {
                             h.Username("guest");
                             h.Password("guest");
+                        });
+                        sbc.ReceiveEndpoint(host, "catalog_validation_queue", e => 
+                        {
+                            e.Consumer<OrderStatusChangedToAwaitingValidationIntegrationEventHandler>(c);
+                        });
+                        sbc.ReceiveEndpoint(host, "catalog_orderpaid_queue", e => 
+                        {
+                            e.Consumer<OrderStatusChangedToPaidIntegrationEventHandler>(c);
                         });
                         sbc.UseExtensionsLogging(_loggerFactory);
                     }

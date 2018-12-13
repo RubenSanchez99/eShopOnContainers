@@ -15,9 +15,21 @@
     <PackageReference Include="MassTransit.RabbitMQ" Version="5.1.5"/>
     <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="5.1.5"/>
     <PackageReference Include="MassTransit.Autofac" Version="5.1.5"/>
+    <PackageReference Include="MassTransit.Automatonymous" Version="5.1.5"/>
+    <PackageReference Include="Automatonymous" Version="4.1.3"/>
+    <PackageReference Include="EventFlow.EventStores.EventStore" Version="0.67.3697"/>
+    <PackageReference Include="MassTransit.Extensions.Logging" Version="5.1.5"/>
+    <PackageReference Include="MassTransit.EntityFrameworkCore" Version="5.1.5"/>
+    <PackageReference Include="MassTransit.EntityFramework" Version="5.1.5"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.1.4"/>
+    <PackageReference Include="MassTransit.Quartz" Version="5.1.5"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ordering.Domain\Ordering.Domain.csproj"/>
     <ProjectReference Include="..\Ordering.ReadModel\Ordering.ReadModel.csproj"/>
+  </ItemGroup>
+  <ItemGroup>
+    <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.3"/>
+    <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.3"/>
   </ItemGroup>
 </Project>

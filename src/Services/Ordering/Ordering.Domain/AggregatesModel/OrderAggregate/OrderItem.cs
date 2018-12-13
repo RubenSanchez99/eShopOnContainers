@@ -2,6 +2,7 @@ using System;
 using EventFlow.Entities;
 using Ordering.Domain.Exceptions;
 using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
+using Newtonsoft.Json;
 
 namespace Ordering.Domain.AggregatesModel.OrderAggregate
 {
@@ -10,19 +11,15 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
         // DDD Patterns comment
         // Using private fields, allowed since EF Core 1.1, is a much better encapsulation
         // aligned with DDD Aggregates and Domain Entities (Instead of properties and property collections)
-        private string  _productName;
-        private string  _pictureUrl;
-        private decimal _unitPrice;
-        private decimal _discount;
-        private int     _units;
+        public readonly string  ProductName;
+        public readonly string  PictureUrl;
+        public readonly decimal UnitPrice;
+        public decimal Discount { get; private set; }
+        public int     Units { get; private set; }
 
-        public int ProductId { get; private set; }
+        public readonly int ProductId;
 
-        public OrderItem(OrderItemId id) : base(id)
-        {
-        }
-
-        public OrderItem(OrderItemId id, int productId, string productName, decimal unitPrice, decimal discount, string PictureUrl, int units = 1) : base(id)
+        public OrderItem(OrderItemId id, int productId, string productName, decimal unitPrice, decimal discount, string pictureUrl, int units = 1) : base(id)
         {
             if (units <= 0)
             {
@@ -36,13 +33,13 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
 
             ProductId = productId;
 
-            _productName = productName;
-            _unitPrice = unitPrice;
-            _discount = discount;
-            _units = units;
-            _pictureUrl = PictureUrl;
+            ProductName = productName;
+            UnitPrice = unitPrice;
+            Discount = discount;
+            Units = units;
+            PictureUrl = pictureUrl;
         }
-
+/*
         public string GetPictureUri() => _pictureUrl;
 
         public decimal GetCurrentDiscount()
@@ -61,7 +58,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
         }
 
         public string GetOrderItemProductName() => _productName;
-
+*/
         public void SetNewDiscount(decimal discount)
         {
             if (discount < 0)
@@ -69,7 +66,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
                 throw new OrderingDomainException("Discount is not valid");
             }
 
-            _discount = discount;
+            Discount = discount;
         }
 
         public void AddUnits(int units)
@@ -79,7 +76,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
                 throw new OrderingDomainException("Invalid units");
             }
 
-            _units += units;
+            Units += units;
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using EventFlow.Entities;
+using Newtonsoft.Json;
 using Ordering.Domain.AggregatesModel.BuyerAggregate.Identity;
 using Ordering.Domain.Exceptions;
 
@@ -16,20 +17,27 @@ namespace Ordering.Domain.AggregatesModel.BuyerAggregate
         private int _cardTypeId;
         public CardType CardType { get; private set; }
 
+        [JsonConstructor]
         public PaymentMethod(PaymentMethodId id) : base(id)
         {
+
         }
 
         public PaymentMethod(PaymentMethodId id, int cardTypeId, string alias, string cardNumber, string securityNumber, string cardHolderName, DateTime expiration) : base(id)
         {
-            _cardNumber = !string.IsNullOrWhiteSpace(cardNumber) ? cardNumber : throw new OrderingDomainException(nameof(cardNumber));
-            _securityNumber = !string.IsNullOrWhiteSpace(securityNumber) ? securityNumber : throw new OrderingDomainException(nameof(securityNumber));
-            _cardHolderName = !string.IsNullOrWhiteSpace(cardHolderName) ? cardHolderName : throw new OrderingDomainException(nameof(cardHolderName));
+            Console.Out.WriteLine($"PaymentMethodId: {id.Value}, cardTypeId: {cardTypeId}, alias: {alias}, cardNumber: {cardNumber}, securityNumber: {securityNumber}, cardHolderName: {cardHolderName}, expiration: {expiration}");
+            //_cardNumber = cardNumber == null ? cardNumber : throw new OrderingDomainException(nameof(cardNumber));
+            //_securityNumber = securityNumber == null ? securityNumber : throw new OrderingDomainException(nameof(securityNumber));
+            //_cardHolderName = cardHolderName == null ? cardHolderName : throw new OrderingDomainException(nameof(cardHolderName));
 
-            if (expiration < DateTime.UtcNow)
+            _cardNumber = cardNumber;
+            _securityNumber = securityNumber;
+            _cardHolderName = cardHolderName;
+
+            /* if (expiration < DateTime.UtcNow)
             {
                 throw new OrderingDomainException(nameof(expiration));
-            }
+            }*/
 
             _alias = alias;
             _expiration = expiration;

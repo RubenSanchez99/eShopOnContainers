@@ -5,17 +5,19 @@ using EventFlow.Aggregates;
 using EventFlow.Aggregates.ExecutionResults;
 using EventFlow.Core;
 using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
+using Ordering.Domain.AggregatesModel.BuyerAggregate;
 using Ordering.Domain.AggregatesModel.BuyerAggregate.Identity;
 using Ordering.Domain.Events;
 using Ordering.Domain.Exceptions;
+using Newtonsoft.Json;
 
 namespace Ordering.Domain.AggregatesModel.OrderAggregate
 {
     public class Order : AggregateRoot<Order, OrderId>,
     IEmit<OrderStartedDomainEvent>,
     IEmit<OrderItemAddedDomainEvent>,
-    IEmit<OrderItemUnitsAddedDomainEvent>,
-    IEmit<OrderItemNewDiscountSetDomainEvent>,
+    //IEmit<OrderItemUnitsAddedDomainEvent>,
+    //IEmit<OrderItemNewDiscountSetDomainEvent>,
     IEmit<OrderPaymentMethodChangedDomainEvent>,
     IEmit<OrderBuyerChangedDomainEvent>,
     IEmit<OrderStatusChangedToAwaitingValidationDomainEvent>,
@@ -36,7 +38,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
         public BuyerId GetBuyerId => _buyerId;
         private BuyerId _buyerId;
 
-        public OrderStatus OrderStatus { get; private set; }
+        public OrderStatus OrderStatus => OrderStatus.FromValue<OrderStatus>(_orderStatusId);
         private int _orderStatusId;
 
         private string _description;
@@ -49,19 +51,19 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
         // Using a private collection field, better for DDD Aggregate's encapsulation
         // so OrderItems cannot be added from "outside the AggregateRoot" directly to the collection,
         // but only through the method OrderAggrergateRoot.AddOrderItem() which includes behaviour.
-        private readonly List<OrderItem> _orderItems;
+        private List<OrderItem> _orderItems;
         public IReadOnlyCollection<OrderItem> OrderItems => _orderItems;
 
         private PaymentMethodId _paymentMethodId;
 
 
-
+        /*
         public static Order NewDraft()
         {
             var order = new Order(OrderId.New);
             order._isDraft = true;
             return order;
-        }
+        }*/
 
         public Order(OrderId id) : base(id)
         {
@@ -69,44 +71,55 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
             _isDraft = false;
         }
 
-        public IExecutionResult Create(OrderId id, string userId, string userName, Address address, int cardTypeId, string cardNumber, string cardSecurityNumber,
-                string cardHolderName, DateTime cardExpiration, string buyerId = null, PaymentMethodId paymentMethodId = null)
+        public IExecutionResult Create(string userId, string userName, Address address, int cardTypeId, string cardNumber, string cardSecurityNumber,
+                string cardHolderName, DateTime cardExpiration, IEnumerable<OrderItem> items, string buyerId = null)
         {
-            Emit(new OrderStartedDomainEvent(paymentMethodId, DateTime.UtcNow, address, userId, userName, cardTypeId, cardNumber, cardSecurityNumber, cardHolderName, cardExpiration));
+            var itemList = new List<OrderItem>();
+            foreach (var item in items)
+            {
+                var existingOrderForProduct = itemList.Where(o => o.ProductId == item.ProductId)
+                .SingleOrDefault();
 
+                if (existingOrderForProduct != null)
+                {
+                    //if previous line exist modify it with higher discount  and units..
+
+                    if (item.Discount > existingOrderForProduct.Discount)
+                    {
+                        existingOrderForProduct.SetNewDiscount(item.Discount);
+                        //Emit(new OrderItemNewDiscountSetDomainEvent(item.ProductId, item.Discount));
+                    }
+
+                    existingOrderForProduct.AddUnits(item.Units);
+                    //Emit(new OrderItemUnitsAddedDomainEvent(item.ProductId, item.Units));
+                }
+                else
+                {
+                    //add validated new order item
+                    itemList.Add(item);
+                    //Emit(new OrderItemAddedDomainEvent(item.ProductId, item.GetOrderItemProductName(), item.GetPictureUri(), item.UnitPrice, item.Discount, item.Units));
+                }
+            }
+
+            var orderStarted = new OrderStartedDomainEvent(DateTime.UtcNow, address, userId, userName, cardTypeId, cardNumber, cardSecurityNumber, cardHolderName, cardExpiration, itemList);
+            Console.Out.WriteLine(JsonConvert.SerializeObject(orderStarted, Formatting.Indented));
+            Emit(orderStarted);
             return ExecutionResult.Success();
         }
 
         public void Apply(OrderStartedDomainEvent aggregateEvent)
         {
             //_buyerId = aggregateEvent._buyerId;
-            _paymentMethodId = aggregateEvent.PaymentMethodId;
+            //_paymentMethodId = aggregateEvent.PaymentMethodId;
             _orderStatusId = OrderStatus.Submitted.Id;
             _orderDate = aggregateEvent.OrderDate;
             Address = aggregateEvent.Address;
+            _orderItems = aggregateEvent.Items.ToList();
         }
 
         public IExecutionResult AddOrderItem(int productId, string productName, decimal unitPrice, decimal discount, string pictureUrl, int units = 1)
         {
-            var existingOrderForProduct = _orderItems.Where(o => o.ProductId == productId)
-                .SingleOrDefault();
-
-            if (existingOrderForProduct != null)
-            {
-                //if previous line exist modify it with higher discount  and units..
-
-                if (discount > existingOrderForProduct.GetCurrentDiscount())
-                {
-                    Emit(new OrderItemNewDiscountSetDomainEvent(productId, discount));
-                }
-
-                Emit(new OrderItemUnitsAddedDomainEvent(productId, units));
-            }
-            else
-            {
-                //add validated new order item
-                Emit(new OrderItemAddedDomainEvent(productId, productName, pictureUrl, unitPrice, discount, units));
-            }
+            
 
             return ExecutionResult.Success();
         }
@@ -136,9 +149,9 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
             Emit(new OrderPaymentMethodChangedDomainEvent(id));
         }
 
-        public void SetBuyerId(BuyerId id)
+        public void SetBuyerId(BuyerId buyerId)
         {
-            Emit(new OrderBuyerChangedDomainEvent(id));
+            Emit(new OrderBuyerChangedDomainEvent(buyerId));
         }
 
         public void Apply(OrderBuyerChangedDomainEvent aggregateEvent)
@@ -153,9 +166,11 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
 
         public void SetAwaitingValidationStatus()
         {
+            Console.Out.WriteLine("Setting awaiting validation status for order with value " + OrderStatus.FromValue<OrderStatus>(_orderStatusId).Name);
             if (_orderStatusId == OrderStatus.Submitted.Id)
             {
-                Emit(new OrderStatusChangedToAwaitingValidationDomainEvent(this, _orderItems));
+                Console.Out.WriteLine("Setting OrderStatusChangedToAwaitingValidationDomainEvent for order with value " + OrderStatus.FromValue<OrderStatus>(_orderStatusId).Name);
+                Emit(new OrderStatusChangedToAwaitingValidationDomainEvent(_orderItems));
             }
         }
 
@@ -166,8 +181,10 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
 
         public void SetStockConfirmedStatus()
         {
+            Console.Out.WriteLine("Setting stock confirmed with status " + _orderStatusId);
             if (_orderStatusId == OrderStatus.AwaitingValidation.Id)
             {
+                Console.Out.WriteLine("Emitin OrderStatusChangedToStockConfirmed");
                 Emit(new OrderStatusChangedToStockConfirmedDomainEvent());
             }
         }
@@ -234,7 +251,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
             {
                 var itemsStockRejectedProductNames = OrderItems
                     .Where(c => orderStockRejectedItems.Contains(c.ProductId))
-                    .Select(c => c.GetOrderItemProductName());
+                    .Select(c => c.ProductName);
 
                 var itemsStockRejectedDescription = string.Join(", ", itemsStockRejectedProductNames);
                 var description = $"The product items don't have stock: ({itemsStockRejectedDescription}).";
@@ -250,7 +267,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
 
         public decimal GetTotal()
         {
-            return _orderItems.Sum(o => o.GetUnits() * o.GetUnitPrice());
+            return _orderItems.Sum(o => o.Units * o.UnitPrice);
         }
     }
 }

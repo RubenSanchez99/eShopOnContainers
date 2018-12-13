@@ -9,14 +9,12 @@ namespace Ordering.Domain.Events
     public class BuyerAndPaymentMethodVerifiedDomainEvent
         : IAggregateEvent<Buyer, BuyerId>
     {
-        public Buyer Buyer { get; private set; }
-        public PaymentMethod Payment { get; private set; }
+        public PaymentMethodId PaymentId { get; private set; }
         public OrderId OrderId { get; private set; }
 
-        public BuyerAndPaymentMethodVerifiedDomainEvent(Buyer buyer, PaymentMethod payment, OrderId orderId)
+        public BuyerAndPaymentMethodVerifiedDomainEvent(PaymentMethodId paymentId, OrderId orderId)
         {
-            Buyer = buyer;
-            Payment = payment;
+            PaymentId = paymentId;
             OrderId = orderId;
         }
     }

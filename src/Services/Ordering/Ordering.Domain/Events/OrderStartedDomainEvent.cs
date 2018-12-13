@@ -20,16 +20,15 @@ namespace Ordering.Domain.Events
         public string CardSecurityNumber { get; }
         public string CardHolderName { get; }
         public DateTime CardExpiration { get; }
-        public PaymentMethodId PaymentMethodId { get; }
         public DateTime OrderDate { get; }
         public Address Address { get; }
+        public IEnumerable<OrderItem> Items { get; }
 
-        public OrderStartedDomainEvent(PaymentMethodId paymentMethodId, DateTime orderDate, Address address, string userId, string userName,
+        public OrderStartedDomainEvent(DateTime orderDate, Address address, string userId, string userName,
                                        int cardTypeId, string cardNumber, 
                                        string cardSecurityNumber, string cardHolderName, 
-                                       DateTime cardExpiration)
+                                       DateTime cardExpiration, IEnumerable<OrderItem> items)
         {
-            PaymentMethodId = paymentMethodId;
             OrderDate = orderDate;
             Address = address;
             UserId = userId;
@@ -39,6 +38,7 @@ namespace Ordering.Domain.Events
             CardSecurityNumber = cardSecurityNumber;
             CardHolderName = cardHolderName;
             CardExpiration = cardExpiration;
+            Items = items;
         }
     }
 }

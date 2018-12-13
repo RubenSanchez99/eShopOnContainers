@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EventFlow.Aggregates;
 using EventFlow.Aggregates.ExecutionResults;
+using Newtonsoft.Json;
 using Ordering.Domain.AggregatesModel.BuyerAggregate;
 using Ordering.Domain.AggregatesModel.BuyerAggregate.Identity;
 using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
@@ -12,7 +13,8 @@ namespace Ordering.Domain.AggregatesModel.BuyerAggregate
 {
     public class Buyer : AggregateRoot<Buyer, BuyerId>,
         IEmit<BuyerCreatedDomainEvent>,
-        IEmit<BuyerPaymentMethodAddedDomainEvent>
+        IEmit<BuyerPaymentMethodAddedDomainEvent>,
+        IEmit<BuyerAndPaymentMethodVerifiedDomainEvent>
     {
         public string IdentityGuid { get; private set; }
         public string BuyerName { get; private set; }
@@ -31,28 +33,42 @@ namespace Ordering.Domain.AggregatesModel.BuyerAggregate
             Emit(new BuyerCreatedDomainEvent(identity, name));
         }
 
-        public PaymentMethod VerifyOrAddPaymentMethod(
+        public void VerifyOrAddPaymentMethod(
             int cardTypeId, string alias, string cardNumber, 
             string securityNumber, string cardHolderName, DateTime expiration, OrderId orderId)
         {
+            Console.Out.WriteLine("Card type id: " + cardTypeId);
+            Console.Out.WriteLine("Card number: " + cardNumber);
+            Console.Out.WriteLine("Card expiration: " + expiration);
+
+            Console.Out.WriteLine(JsonConvert.SerializeObject(_paymentMethods, Formatting.Indented));
+            
             var existingPayment = _paymentMethods.Where(p => p.IsEqualTo(cardTypeId, cardNumber, expiration))
                 .SingleOrDefault();
 
             if (existingPayment != null)
             {
-                Emit(new BuyerAndPaymentMethodVerifiedDomainEvent(this, existingPayment, orderId));
+                Emit(new BuyerAndPaymentMethodVerifiedDomainEvent(existingPayment.Id, orderId));
 
-                return existingPayment;
+                //return existingPayment;
             }
             else
             {
-                var payment = new PaymentMethod(PaymentMethodId.New, cardTypeId, alias, cardNumber, securityNumber, cardHolderName, expiration);
+                //TODO: Revisar por qué cardNumber aparece como inexistente
+                //var payment = new PaymentMethod(PaymentMethodId.New, cardTypeId, alias, cardNumber, securityNumber, cardHolderName, expiration);
 
-                Emit(new BuyerPaymentMethodAddedDomainEvent(payment));
+                var paymentMethodId = PaymentMethodId.New;
+
+                var paymentMethodAdded = new BuyerPaymentMethodAddedDomainEvent(paymentMethodId ,cardTypeId, alias, cardNumber, securityNumber, cardHolderName, expiration);
+                Console.Out.WriteLine(JsonConvert.SerializeObject(paymentMethodAdded, Formatting.Indented));
+                Emit(paymentMethodAdded);
                 
-                Emit(new BuyerAndPaymentMethodVerifiedDomainEvent(this, payment, orderId));
+                var paymentMethodVerified = new BuyerAndPaymentMethodVerifiedDomainEvent(paymentMethodId, orderId);
+                Console.Out.WriteLine(JsonConvert.SerializeObject(paymentMethodVerified, Formatting.Indented));
 
-                return payment;
+                Emit(paymentMethodVerified);
+
+                //return payment;
             }
         }
 
@@ -66,7 +82,11 @@ namespace Ordering.Domain.AggregatesModel.BuyerAggregate
 
         public void Apply(BuyerPaymentMethodAddedDomainEvent aggregateEvent)
         {
-            _paymentMethods.Add(aggregateEvent.PaymentMethod);
+            _paymentMethods.Add(new PaymentMethod(aggregateEvent.PaymentMethodId, aggregateEvent.CardTypeId, aggregateEvent.Alias, aggregateEvent.CardNumber, aggregateEvent.SecurityNumber, aggregateEvent.CardHolderName, aggregateEvent.Expiration));
+        }
+
+        public void Apply(BuyerAndPaymentMethodVerifiedDomainEvent aggregateEvent)
+        {
         }
     }
 }

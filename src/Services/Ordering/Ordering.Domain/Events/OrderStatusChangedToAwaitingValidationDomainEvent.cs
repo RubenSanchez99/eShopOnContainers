@@ -11,13 +11,11 @@
     public class OrderStatusChangedToAwaitingValidationDomainEvent
          : IAggregateEvent<Order, OrderId>
     {
-        public Order Order { get; }
         public IEnumerable<OrderItem> OrderItems { get; }
 
-        public OrderStatusChangedToAwaitingValidationDomainEvent(Order order,
+        public OrderStatusChangedToAwaitingValidationDomainEvent(
             IEnumerable<OrderItem> orderItems)
         {
-            Order = order;
             OrderItems = orderItems;
         }
     }

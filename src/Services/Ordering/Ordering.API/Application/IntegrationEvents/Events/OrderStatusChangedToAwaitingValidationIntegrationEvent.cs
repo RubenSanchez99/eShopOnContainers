@@ -1,21 +1,18 @@
 ﻿namespace eShopOnContainers.Services.IntegrationEvents.Events
 {
     using System.Collections.Generic;
+    using System.Linq;
 
     public class OrderStatusChangedToAwaitingValidationIntegrationEvent
     {
-        public string OrderId { get; }
-        public string OrderStatus { get; }
-        public string BuyerName { get; }
-        public IEnumerable<OrderStockItem> OrderStockItems { get; }
+        public string OrderId { get;}
+        public List<OrderStockItem> OrderStockItems { get; }
 
-        public OrderStatusChangedToAwaitingValidationIntegrationEvent(string orderId, string orderStatus, string buyerName,
+        public OrderStatusChangedToAwaitingValidationIntegrationEvent(string orderId,
             IEnumerable<OrderStockItem> orderStockItems)
         {
             OrderId = orderId;
-            OrderStockItems = orderStockItems;
-            OrderStatus = orderStatus;
-            BuyerName = buyerName;
+            OrderStockItems = orderStockItems.ToList();
         }
     }
 

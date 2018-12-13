@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventFlow.Aggregates;
+using EventFlow.Core;
 using EventFlow.Subscribers;
 using Ordering.Domain.AggregatesModel.OrderAggregate;
 using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
@@ -14,20 +15,28 @@ namespace Ordering.API.Application.Subscribers.BuyerAndPaymentMethodVerified
     public class UpdateOrderWhenBuyerAndPaymentMethodVerifiedSubscriber
         : ISubscribeSynchronousTo<Buyer, BuyerId, BuyerAndPaymentMethodVerifiedDomainEvent>
     {
-        IAggregateStore _aggregateStore;
+        private readonly IAggregateStore _aggregateStore;
 
-        public UpdateOrderWhenBuyerAndPaymentMethodVerifiedSubscriber(IAggregateStore aggreateStore)
+        public UpdateOrderWhenBuyerAndPaymentMethodVerifiedSubscriber(IAggregateStore aggregateStore)
         {
-            _aggregateStore = aggreateStore;
+            _aggregateStore = aggregateStore ?? throw new ArgumentNullException(nameof(aggregateStore));
         }
 
         public async Task HandleAsync(IDomainEvent<Buyer, BuyerId, BuyerAndPaymentMethodVerifiedDomainEvent> domainEvent, CancellationToken cancellationToken)
         {
-            var order = await _aggregateStore.LoadAsync<Order, OrderId>(
-                                      domainEvent.AggregateEvent.OrderId
-                                    , CancellationToken.None).ConfigureAwait(false); 
-            order.SetBuyerId(domainEvent.AggregateEvent.Buyer.Id);
-            order.SetPaymentId(domainEvent.AggregateEvent.Payment.Id);
+            var orderId = domainEvent.AggregateEvent.OrderId;
+
+            Console.Out.WriteLine("Setting buyer and payment method for " + orderId.Value);
+            Console.Out.WriteLine($"Buyer: {domainEvent.AggregateIdentity.Value} PaymentMethod: {domainEvent.AggregateEvent.PaymentId.Value}");
+            
+            await _aggregateStore.UpdateAsync<Order, OrderId>(orderId, SourceId.New,
+                (order, c) => {
+                        order.SetBuyerId(domainEvent.AggregateIdentity);
+                        order.SetPaymentId(domainEvent.AggregateEvent.PaymentId);
+                        return Task.FromResult(0);
+                }, CancellationToken.None
+            ).ConfigureAwait(false);
+
             return;
         }
     }

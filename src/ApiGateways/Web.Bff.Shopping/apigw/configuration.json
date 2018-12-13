@@ -17,6 +17,22 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/{version}/basket/checkout",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "basket.api",
+          "Port": 80
+        }
+      ],
+      "UpstreamPathTemplate": "/api/{version}/basket/checkout",
+      "UpstreamHttpMethod": [ "POST" ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "IdentityApiKey",
+        "AllowedScopes": []
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/{version}/basket/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

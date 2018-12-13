@@ -2,8 +2,8 @@
 {
     public class OrderPaymentFailedIntegrationEvent
     {
-        public int OrderId { get; }
+        public string OrderId { get; }
 
-        public OrderPaymentFailedIntegrationEvent(int orderId) => OrderId = orderId;
+        public OrderPaymentFailedIntegrationEvent(string orderId) => OrderId = orderId;
     }
 }

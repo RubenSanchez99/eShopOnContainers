@@ -2,8 +2,8 @@
 {
     public class OrderPaymentSuccededIntegrationEvent
     {
-        public int OrderId { get; }
+        public string OrderId { get; }
 
-        public OrderPaymentSuccededIntegrationEvent(int orderId) => OrderId = orderId;
+        public OrderPaymentSuccededIntegrationEvent(string orderId) => OrderId = orderId;
     }
 }

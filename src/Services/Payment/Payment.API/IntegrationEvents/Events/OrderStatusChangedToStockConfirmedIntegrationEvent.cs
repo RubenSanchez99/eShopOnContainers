@@ -2,9 +2,9 @@
 {
     public class OrderStatusChangedToStockConfirmedIntegrationEvent
     {
-        public int OrderId { get; }
+        public string OrderId { get; }
 
-        public OrderStatusChangedToStockConfirmedIntegrationEvent(int orderId)
+        public OrderStatusChangedToStockConfirmedIntegrationEvent(string orderId)
             => OrderId = orderId;
     }
 }

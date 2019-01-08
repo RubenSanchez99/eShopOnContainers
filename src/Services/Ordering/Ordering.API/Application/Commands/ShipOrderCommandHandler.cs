@@ -7,9 +7,9 @@ using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
 
 namespace Ordering.API.Application.Commands
 {
-    public class ShipOrderCommandHandler : CommandHandler<Order, OrderId, IExecutionResult, CancelOrderCommand>
+    public class ShipOrderCommandHandler : CommandHandler<Order, OrderId, IExecutionResult, ShipOrderCommand>
     {
-        public override Task<IExecutionResult> ExecuteCommandAsync(Order aggregate, CancelOrderCommand command, CancellationToken cancellationToken)
+        public override Task<IExecutionResult> ExecuteCommandAsync(Order aggregate, ShipOrderCommand command, CancellationToken cancellationToken)
         {
             var excecutionResult = aggregate.SetShippedStatus();
             return Task.FromResult(excecutionResult);

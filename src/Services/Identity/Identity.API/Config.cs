@@ -25,11 +25,9 @@ namespace Identity.API
             return new ApiResource[]
             {
                 new ApiResource("basket", "Basket Service"),
-                //new ApiResource("marketing", "Marketing Service"),
-                //new ApiResource("locations", "Locations Service"),
-                //new ApiResource("mobileshoppingagg", "Mobile Shopping Aggregator"),
+                new ApiResource("orders", "Orders Service"),
                 new ApiResource("webshoppingagg", "Web Shopping Aggregator"),
-                //new ApiResource("orders.signalrhub", "Ordering Signalr Hub")
+                new ApiResource("orders.signalrhub", "Ordering Signalr Hub")
             };
         }
 
@@ -55,40 +53,54 @@ namespace Identity.API
                 {
                     ClientId = "mvc",
                     ClientName = "MVC Client",
-
-                    AllowedGrantTypes = GrantTypes.HybridAndClientCredentials,
-                    ClientSecrets = { new Secret("49C1A7E1-0C79-4A89-A3D6-A37998FB86B0".Sha256()) },
-
-                    RedirectUris = { "http://localhost:5001/signin-oidc" },
-                    FrontChannelLogoutUri = "http://localhost:5001/signout-oidc",
-                    PostLogoutRedirectUris = { "http://localhost:5001/signout-callback-oidc" },
-
+                    ClientSecrets = new List<Secret>
+                    {
+                        new Secret("49C1A7E1-0C79-4A89-A3D6-A37998FB86B0".Sha256())
+                    },
+                    ClientUri = $"http://localhost:5100/",                             // public uri of the client
+                    AllowedGrantTypes = GrantTypes.Hybrid,
+                    AllowAccessTokensViaBrowser = false,
+                    RequireConsent = false,
                     AllowOfflineAccess = true,
-                    AllowedScopes = { "openid", "profile", "api1" }
+                    AlwaysIncludeUserClaimsInIdToken = true,
+                    RedirectUris = new List<string>
+                    {
+                        $"http://localhost:5100/signin-oidc"
+                    },
+                    PostLogoutRedirectUris = new List<string>
+                    {
+                        $"http://localhost:5100/signout-callback-oidc"
+                    },
+                    AllowedScopes = new List<string>
+                    {
+                        IdentityServerConstants.StandardScopes.OpenId,
+                        IdentityServerConstants.StandardScopes.Profile,
+                        IdentityServerConstants.StandardScopes.OfflineAccess,
+                        "basket",
+                        "orders",
+                        "webshoppingagg"
+                    }
                 },
 
                 // SPA client using implicit flow
                 new Client
                 {
-                    ClientId = "spa",
-                    ClientName = "SPA Client",
-                    ClientUri = "http://identityserver.io",
-
+                    ClientId = "js",
+                    ClientName = "eShop SPA OpenId Client",
                     AllowedGrantTypes = GrantTypes.Implicit,
                     AllowAccessTokensViaBrowser = true,
-
-                    RedirectUris =
+                    RedirectUris =           { $"http://localhost:5106/" },
+                    RequireConsent = false,
+                    PostLogoutRedirectUris = { $"http://localhost:5106/" },
+                    AllowedCorsOrigins =     { $"http://localhost:5106/" },
+                    AllowedScopes =
                     {
-                        "http://localhost:5002/index.html",
-                        "http://localhost:5002/callback.html",
-                        "http://localhost:5002/silent.html",
-                        "http://localhost:5002/popup.html",
-                    },
-
-                    PostLogoutRedirectUris = { "http://localhost:5002/index.html" },
-                    AllowedCorsOrigins = { "http://localhost:5002" },
-
-                    AllowedScopes = { "openid", "profile", "api1" }
+                        IdentityServerConstants.StandardScopes.OpenId,
+                        IdentityServerConstants.StandardScopes.Profile,
+                        "orders",
+                        "basket",
+                        "webshoppingagg"
+                    }
                 },
                 
                 new Client
@@ -107,6 +119,7 @@ namespace Identity.API
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Profile,
                         "basket",
+                        "orders",
                         "webshoppingagg"
                     }
                 }

@@ -6,11 +6,9 @@ namespace Ordering.Domain.Events
 {
     public class OrderShippedDomainEvent : IAggregateEvent<Order, OrderId>
     {
-        public Order Order { get; }
 
-        public OrderShippedDomainEvent(Order order)
-        {
-            Order = order;           
+        public OrderShippedDomainEvent()
+        {         
         }
     }
 }

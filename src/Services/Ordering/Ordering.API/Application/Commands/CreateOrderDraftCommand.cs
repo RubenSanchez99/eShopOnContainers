@@ -3,11 +3,13 @@ using System.Runtime.Serialization;
 using Ordering.API.Application.Models;
 using Ordering.Domain.AggregatesModel.OrderAggregate;
 using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
+using Ordering.Domain.ExecutionResults;
+using System.Linq;
 using EventFlow.Commands;
 
 namespace Ordering.API.Application.Commands
 {
-    public class CreateOrderDraftCommand : Command<Order, OrderId>
+    public class CreateOrderDraftCommand : Command<Order, OrderId, OrderDraftExcecutionResult>
     {
         public string BuyerId { get; private set; }
 

@@ -9,6 +9,7 @@ using Ordering.Domain.AggregatesModel.BuyerAggregate;
 using Ordering.Domain.AggregatesModel.BuyerAggregate.Identity;
 using Ordering.Domain.Events;
 using Ordering.Domain.Exceptions;
+using Ordering.Domain.ExecutionResults;
 using Newtonsoft.Json;
 
 namespace Ordering.Domain.AggregatesModel.OrderAggregate
@@ -57,13 +58,25 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
         private PaymentMethodId _paymentMethodId;
 
 
-        /*
-        public static Order NewDraft()
+        
+        public OrderDraftExcecutionResult NewDraft(string buyerId, IEnumerable<OrderItem> items)
         {
-            var order = new Order(OrderId.New);
-            order._isDraft = true;
-            return order;
-        }*/
+            var itemList = CreateItemList(items);
+            var order = new OrderDraft()
+            {
+                OrderNumber = 0,
+                Date = DateTime.Now,
+                Status = OrderStatus.Submitted.Name,
+                Description = "Order draft for user " + buyerId,
+                Street = "",
+                City = "",
+                ZipCode = "",
+                Country = "",
+                OrderItems = itemList.Select(x => new OrderDraftItem(x.ProductName, x.UnitPrice, x.Units, x.PictureUrl)).ToList(),
+                Total = itemList.Sum(x => x.UnitPrice * x.Units)
+            };
+            return new OrderDraftExcecutionResult(true, order);
+        }
 
         public Order(OrderId id) : base(id)
         {
@@ -71,8 +84,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
             _isDraft = false;
         }
 
-        public IExecutionResult Create(string userId, string userName, Address address, int cardTypeId, string cardNumber, string cardSecurityNumber,
-                string cardHolderName, DateTime cardExpiration, IEnumerable<OrderItem> items, string buyerId = null)
+        private List<OrderItem> CreateItemList(IEnumerable<OrderItem> items)
         {
             var itemList = new List<OrderItem>();
             foreach (var item in items)
@@ -100,6 +112,13 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
                     //Emit(new OrderItemAddedDomainEvent(item.ProductId, item.GetOrderItemProductName(), item.GetPictureUri(), item.UnitPrice, item.Discount, item.Units));
                 }
             }
+            return itemList;
+        }
+
+        public IExecutionResult Create(string userId, string userName, Address address, int cardTypeId, string cardNumber, string cardSecurityNumber,
+                string cardHolderName, DateTime cardExpiration, IEnumerable<OrderItem> items, string buyerId = null)
+        {
+            var itemList = CreateItemList(items);
 
             var orderStarted = new OrderStartedDomainEvent(DateTime.UtcNow, address, userId, userName, cardTypeId, cardNumber, cardSecurityNumber, cardHolderName, cardExpiration, itemList);
             Console.Out.WriteLine(JsonConvert.SerializeObject(orderStarted, Formatting.Indented));
@@ -216,7 +235,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
                 StatusChangeException(OrderStatus.Shipped);
             }
 
-            Emit(new OrderShippedDomainEvent(this));
+            Emit(new OrderShippedDomainEvent());
 
             return ExecutionResult.Success();
         }
@@ -235,7 +254,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
                 StatusChangeException(OrderStatus.Cancelled);
             }
 
-            Emit(new OrderCancelledDomainEvent(this, $"The order was cancelled."));
+            Emit(new OrderCancelledDomainEvent($"The order was cancelled."));
             return ExecutionResult.Success();
         }
 
@@ -256,7 +275,7 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
                 var itemsStockRejectedDescription = string.Join(", ", itemsStockRejectedProductNames);
                 var description = $"The product items don't have stock: ({itemsStockRejectedDescription}).";
 
-                Emit(new OrderCancelledDomainEvent(this, description));
+                Emit(new OrderCancelledDomainEvent(description));
             }
         }
 

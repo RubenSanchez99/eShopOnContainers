@@ -32,7 +32,6 @@ using Microsoft.Extensions.Hosting;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
 using Ordering.ReadModel;
-using Ordering.API.Application.Services;
 using Ordering.API.Application.IntegrationEvents.EventHandling;
 using Ordering.Domain.Events;
 using Ordering.API.Application.Sagas;
@@ -41,6 +40,12 @@ using Ordering.API.Infrastructure;
 using GreenPipes;
 using MassTransit.Saga;
 using Ordering.API.Application.Subscribers;
+using Ordering.API.Application.Commands;
+using Ordering.API.Infrastructure.Services;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
+using System.Reflection;
 
 namespace Ordering.API
 {
@@ -67,17 +72,7 @@ namespace Ordering.API
             services.AddScoped<OrderPaymentSuccededIntegrationEventHandler>();
             services.AddScoped<OrderPaymentFailedIntegrationEventHandler>();
             services.AddScoped<GracePeriodConfirmedIntegrationEventHandler>();
-
-            var eventStoreUri = new Uri(Environment.GetEnvironmentVariable("EVENTSTORE_URL"));
-            var connectionString = Environment.GetEnvironmentVariable("ConnectionString");
-
-            var connectionSettings = ConnectionSettings.Create()
-                .EnableVerboseLogging()
-                .KeepReconnecting()
-                .KeepRetrying()
-                .SetDefaultUserCredentials(new UserCredentials("admin", "changeit"))
-                .Build();
-
+            
             var events = new List<Type>() {
                 typeof(OrderStartedDomainEvent),
                 typeof(BuyerCreatedDomainEvent),
@@ -87,34 +82,26 @@ namespace Ordering.API
                 typeof(OrderStatusChangedToPaidDomainEvent),
                 typeof(OrderStatusChangedToStockConfirmedDomainEvent),
                 typeof(OrderBuyerChangedDomainEvent),
-                typeof(OrderPaymentMethodChangedDomainEvent)
+                typeof(OrderPaymentMethodChangedDomainEvent),
+                typeof(OrderCancelledDomainEvent),
+                typeof(OrderShippedDomainEvent)
+            };
+
+            var commandHandlers = new List<Type> {
+                typeof(CreateOrderCommandHandler),
+                typeof(CancelOrderCommandHandler),
+                typeof(ShipOrderCommandHandler),
+                typeof(CreateOrderDraftCommandHandler)
             };
 
             var container = EventFlowOptions.New
                 .UseAutofacContainerBuilder(containerBuilder)
                 .UseConsoleLog()
-                //.AddAspNetCoreMetadataProviders()
-                //.AddEvents(typeof(OrderStartedDomainEvent).Assembly)
                 .AddEvents(events)
-                .AddCommandHandlers(typeof(Startup).Assembly)
+                .AddCommandHandlers(commandHandlers)
                 .AddSubscribers(typeof(Startup).Assembly)
                 .AddQueryHandlers(typeof(OrderingDbContext).Assembly)
-                //.AddDefaults(typeof(Startup).Assembly)
-                .UseEventStoreEventStore(eventStoreUri, connectionSettings)
                 .AddEntityFrameworkReadModel();
-                
-            /*
-            var options = new DbContextOptionsBuilder<SagaDbContext<GracePeriod, SagaDbContextMapping>>()
-                .UseSqlServer(@"Server=sql.data;Initial Catalog=CapacitacionMicroservicios.OrderingDb;User Id=sa;Password=Pass@word")
-                .Options;
-
-            Func<DbContext> contextFactory = () => 
-                new SagaDbContext<GracePeriod, SagaDbContextMapping>(options);
-
-            var repository = new EntityFrameworkSagaRepository<GracePeriod>(
-                contextFactory, optimistic: false);
-
-            */
 
             containerBuilder.Register(c =>
             {
@@ -156,7 +143,7 @@ namespace Ordering.API
                                 x.Handle<DbUpdateConcurrencyException>();
                                 x.Interval(5, TimeSpan.FromMilliseconds(100));
                             }); // Add the retry middleware for optimistic concurrency
-                        e.StateMachineSaga(new GracePeriodStateMachine(), new InMemorySagaRepository<GracePeriod>());
+                        e.StateMachineSaga(new GracePeriodStateMachine(c.Resolve<ICommandBus>()), new InMemorySagaRepository<GracePeriod>());
                     });
                     sbc.UseExtensionsLogging(_loggerFactory);
                     sbc.UseInMemoryScheduler();
@@ -173,9 +160,12 @@ namespace Ordering.API
             .As<IPublishEndpoint>()
             .SingleInstance();
 
-            services.AddTransient<IOrderingService, OrderingService>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddTransient<IIdentityService, IdentityService>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
+            ConfigureAuthService(services);
 
             containerBuilder.Populate(services);
 
@@ -194,9 +184,46 @@ namespace Ordering.API
                 app.UseHsts();
             }
 
+            ConfigureAuth(app);
+
             app.UseHttpsRedirection();
             app.UseMiddleware<CommandPublishMiddleware>();
             app.UseMvc();
+        }
+
+        private void ConfigureAuthService(IServiceCollection services)
+        {
+            // prevent from mapping "sub" claim to nameidentifier.
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
+            var identityUrl = Configuration.GetValue<string>("IdentityUrl");
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+            }).AddJwtBearer(options =>
+            {
+                options.Authority = "http://identity.api";
+                options.MetadataAddress = "http://identity.api/.well-known/openid-configuration";
+                options.RequireHttpsMetadata = false; 
+                options.Audience = "http://identity.api/resources";
+                options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidAudiences = new List<string> 
+                    {
+                        "postman",
+                    }
+                };
+
+            });
+        }
+
+        protected virtual void ConfigureAuth(IApplicationBuilder app)
+        {
+            app.UseAuthentication();
         }
     }
 }

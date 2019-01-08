@@ -18,7 +18,6 @@ namespace Ordering.ReadModel
         public OrderingDbContext CreateContext()
         {
             var context = new OrderingDbContext(_options);
-            context.Database.EnsureCreated();
             return context;
         }
 

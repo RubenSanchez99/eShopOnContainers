@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Ordering.ReadModel.Model;
+using EventFlow.EntityFramework.Extensions;
 
 namespace Ordering.ReadModel
 {
@@ -21,6 +22,9 @@ namespace Ordering.ReadModel
                 .ValueGeneratedOnAdd();
             
             modelBuilder.Entity<OrderReadModel>().HasKey(e => e.OrderId);
+
+            modelBuilder.AddEventFlowEvents();
+            modelBuilder.AddEventFlowSnapshots();
         }
     }
 }

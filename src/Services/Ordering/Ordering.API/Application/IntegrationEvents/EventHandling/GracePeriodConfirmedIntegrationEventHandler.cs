@@ -24,11 +24,6 @@ namespace Ordering.API.Application.IntegrationEvents.EventHandling
         {
             var orderId = new OrderId(context.Message.OrderId);
 
-            var orderToUpdate = await _aggregateStore
-                .LoadAsync<Order, OrderId>(orderId, CancellationToken.None)
-                .ConfigureAwait(false);
-
-            //orderToUpdate.SetAwaitingValidationStatus();
             await _aggregateStore.UpdateAsync<Order, OrderId>(orderId, SourceId.New,
                 (order, c) => {
                         order.SetAwaitingValidationStatus();

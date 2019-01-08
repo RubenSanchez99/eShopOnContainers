@@ -35,9 +35,6 @@ namespace Ordering.API.Application.IntegrationEvents.EventHandling
             var orderItems = from orderItem in context.Message.Basket.Items
                 select new OrderStockItem(int.Parse(orderItem.ProductId), orderItem.Quantity);
 
-            //_log.LogInformation("OrderStartedIntegrationEvent Sent");
-            //_log.LogInformation("RequestId = " + context.Message.RequestId.ToString());
-
             if (context.Message.RequestId != Guid.Empty)
             {
                 var createOrderCommand = new CreateOrderCommand(orderId, context.Message.Basket.Items, context.Message.UserId, context.Message.UserName, context.Message.City, context.Message.Street, 

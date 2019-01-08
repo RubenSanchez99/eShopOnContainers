@@ -32,8 +32,6 @@ namespace Ordering.API.Application.IntegrationEvents.EventHandling
 
             await Console.Out.WriteLineAsync("Confirmed stock for order" + orderToUpdate.Id.Value);
             
-            //orderToUpdate.SetStockConfirmedStatus();
-
             await _aggregateStore.UpdateAsync<Order, OrderId>(orderId, SourceId.New,
                 (order, c) => {
                         order.SetStockConfirmedStatus();

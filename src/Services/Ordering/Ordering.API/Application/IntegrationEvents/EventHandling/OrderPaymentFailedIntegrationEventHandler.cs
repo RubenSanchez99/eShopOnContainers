@@ -28,8 +28,6 @@ namespace Ordering.API.Application.IntegrationEvents.EventHandling
                 .LoadAsync<Order, OrderId>(orderId, CancellationToken.None)
                 .ConfigureAwait(false);
 
-            //orderToUpdate.SetCancelledStatus();
-
             await _aggregateStore.UpdateAsync<Order, OrderId>(orderId, SourceId.New,
                 (order, c) => {
                         order.SetCancelledStatus();

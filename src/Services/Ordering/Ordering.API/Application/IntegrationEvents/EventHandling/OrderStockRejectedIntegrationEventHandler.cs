@@ -31,8 +31,6 @@ namespace Ordering.API.Application.IntegrationEvents.EventHandling
                 .FindAll(c => !c.HasStock)
                 .Select(c => c.ProductId);
 
-            //orderToUpdate.SetCancelledStatusWhenStockIsRejected(orderStockRejectedItems);
-
             await _aggregateStore.UpdateAsync<Order, OrderId>(orderId, SourceId.New,
                 (order, c) => {
                         order.SetCancelledStatusWhenStockIsRejected(orderStockRejectedItems);

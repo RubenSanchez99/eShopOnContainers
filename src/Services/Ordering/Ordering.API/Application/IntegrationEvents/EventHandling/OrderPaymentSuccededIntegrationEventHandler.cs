@@ -31,8 +31,6 @@ namespace Ordering.API.Application.IntegrationEvents.EventHandling
                 .LoadAsync<Order, OrderId>(orderId, CancellationToken.None)
                 .ConfigureAwait(false);
 
-            //orderToUpdate.SetPaidStatus();
-
             await _aggregateStore.UpdateAsync<Order, OrderId>(orderId, SourceId.New,
                 (order, c) => {
                         order.SetPaidStatus();

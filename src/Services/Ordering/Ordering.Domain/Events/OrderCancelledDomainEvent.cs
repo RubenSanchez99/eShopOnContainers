@@ -9,13 +9,11 @@ namespace Ordering.Domain.Events
 {
     public class OrderCancelledDomainEvent : IAggregateEvent<Order, OrderId>
     {
-        public Order Order { get; }
         public string Description { get; }
 
-        public OrderCancelledDomainEvent(Order order, string description)
+        public OrderCancelledDomainEvent(string description)
         {
             Description = description;
-            Order = order;
         }
     }
 }

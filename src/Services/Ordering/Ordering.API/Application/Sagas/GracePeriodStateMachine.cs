@@ -1,14 +1,22 @@
 using System;
 using Automatonymous;
 using eShopOnContainers.Services.IntegrationEvents.Events;
+using EventFlow;
+using Ordering.API.Application.Commands;
+using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Ordering.API.Application.Sagas
 {
     public class GracePeriodStateMachine :
     MassTransitStateMachine<GracePeriod>
     {
-        public GracePeriodStateMachine()
+        private readonly ICommandBus _commandBus;
+        public GracePeriodStateMachine(ICommandBus commandBus)
         {
+            _commandBus = commandBus;
+
             InstanceState(x => x.CurrentState);
 
             Event(() => OrderStarted, x => x.CorrelateBy(gracePeriod => gracePeriod.OrderId, context => context.Message.OrderId).SelectId(context => Guid.NewGuid()));
@@ -22,6 +30,8 @@ namespace Ordering.API.Application.Sagas
             Event(() => OrderPaymentFailed, x => x.CorrelateBy(gracePeriod => gracePeriod.OrderId, context => context.Message.OrderId));
 
             Event(() => OrderCanceled, x => x.CorrelateBy(gracePeriod => gracePeriod.OrderId, context => context.Message.OrderId));
+
+            Event(() => OrderStockSent, x => x.CorrelateBy(gracePeriod => gracePeriod.OrderId, context => context.Message.OrderId));
 
             Schedule(() => GracePeriodFinished, x => x.ExpirationId, x => 
             {
@@ -41,33 +51,48 @@ namespace Ordering.API.Application.Sagas
                 When(OrderStockConfirmed)
                     .TransitionTo(StockConfirmed),
                 When(OrderStockRejected)
-                    .Finalize(),
+                    .Unschedule(GracePeriodFinished)
+                    .TransitionTo(Failed),
                 When(GracePeriodFinished.Received)
-                    .Finalize()
+                    .TransitionTo(Failed)
             );
 
             During(StockConfirmed,
                 When(OrderPaymentSucceded)
-                    .TransitionTo(Validated)
-                    .Finalize(),
+                    .Unschedule(GracePeriodFinished)
+                    .TransitionTo(Validated),
                 When(OrderPaymentFailed)
-                    .Finalize(),
+                    .Unschedule(GracePeriodFinished)
+                    .TransitionTo(Failed),
                 When(GracePeriodFinished.Received)
-                    .Finalize()
+                    .TransitionTo(Failed)
             );
 
             During(PaymentSucceded,
                 When(OrderStockConfirmed)
-                    .TransitionTo(Validated)
-                    .Finalize(),
-                When(OrderPaymentFailed)
+                    .Unschedule(GracePeriodFinished)
+                    .TransitionTo(Validated),
+                When(OrderStockRejected)
+                    .Unschedule(GracePeriodFinished)
                     .Finalize(),
                 When(GracePeriodFinished.Received)
-                    .Finalize());
+                    .TransitionTo(Failed)
+            );
+
+            During(Validated,
+                When(OrderStockSent)
+                    .ThenAsync(context => _commandBus.PublishAsync(new ShipOrderCommand(new OrderId(context.Instance.OrderId), 0), CancellationToken.None))
+                    .Finalize()
+            );
+
+
+            WhenEnter(Failed, 
+                x => x.ThenAsync(context => _commandBus.PublishAsync(new CancelOrderCommand(new OrderId(context.Instance.OrderId), 0), CancellationToken.None))
+                      .Finalize()
+            );
 
             During(Final,
-                When(GracePeriodFinished.AnyReceived)
-                    .Finalize()
+                When(GracePeriodFinished.AnyReceived).Finalize()
             );
         }
 
@@ -77,6 +102,7 @@ namespace Ordering.API.Application.Sagas
         public Event<OrderPaymentSuccededIntegrationEvent> OrderPaymentSucceded { get; private set; }
         public Event<OrderPaymentFailedIntegrationEvent> OrderPaymentFailed { get; private set; }
         public Event<OrderStatusChangedToCancelledIntegrationEvent> OrderCanceled { get; private set; }
+        public Event<OrderStockSentForOrderIntegrationEvent> OrderStockSent { get; private set; }
         
         public Schedule<GracePeriod, GracePeriodExpired> GracePeriodFinished { get; private set; }
 
@@ -84,6 +110,7 @@ namespace Ordering.API.Application.Sagas
         public State StockConfirmed { get; private set; }
         public State PaymentSucceded { get; private set; }
         public State Validated { get; private set; }
+        public State Failed { get; private set; }
         
         public class GracePeriodExpired
         {

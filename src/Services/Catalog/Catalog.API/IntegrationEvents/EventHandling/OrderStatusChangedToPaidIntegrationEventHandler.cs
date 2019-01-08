@@ -10,10 +10,12 @@ namespace Catalog.API.IntegrationEvents.EventHandling
         IConsumer<OrderStatusChangedToPaidIntegrationEvent>
     {
         private readonly CatalogContext _catalogContext;
+        private readonly IPublishEndpoint _endpoint;
 
-        public OrderStatusChangedToPaidIntegrationEventHandler(CatalogContext catalogContext)
+        public OrderStatusChangedToPaidIntegrationEventHandler(CatalogContext catalogContext, IPublishEndpoint endpoint)
         {
             _catalogContext = catalogContext;
+            _endpoint = endpoint;
         }
 
         public async Task Consume(ConsumeContext<OrderStatusChangedToPaidIntegrationEvent> context)
@@ -27,6 +29,9 @@ namespace Catalog.API.IntegrationEvents.EventHandling
             }
 
             await _catalogContext.SaveChangesAsync();
+
+            var orderStockSentForOrder = new OrderStockSentForOrderIntegrationEvent(context.Message.OrderId);
+            await _endpoint.Publish(orderStockSentForOrder);
         }
     }
 }

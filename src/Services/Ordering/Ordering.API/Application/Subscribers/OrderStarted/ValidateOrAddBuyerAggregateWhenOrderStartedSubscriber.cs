@@ -29,19 +29,12 @@ namespace Ordering.API.Application.Subscribers.OrderStarted
 
         public async Task HandleAsync(IDomainEvent<Order, OrderId, OrderStartedDomainEvent> domainEvent, CancellationToken cancellationToken)
         {
-            //Console.Out.WriteLine("Validating Buyer");
-            Console.Out.WriteLine(JsonConvert.SerializeObject(domainEvent.AggregateEvent));
-
-            var buyerId = new BuyerId(domainEvent.AggregateEvent.UserId);
+            var buyerId = BuyerId.With(Guid.Parse(domainEvent.AggregateEvent.UserId));
             
-            Console.Out.WriteLine("Attempting to load aggregate");
             var b = await _aggregateStore
                 .LoadAsync<Buyer, BuyerId>(buyerId, CancellationToken.None)
                 .ConfigureAwait(false);
-            Console.Out.WriteLine(JsonConvert.SerializeObject(b.PaymentMethods, Formatting.Indented));
-            Console.Out.WriteLine("Buyer loaded!");
-
-            
+                        
             var cardTypeId = (domainEvent.AggregateEvent.CardTypeId != 0) ? domainEvent.AggregateEvent.CardTypeId : 1;
 
             await _aggregateStore.UpdateAsync<Buyer, BuyerId>(buyerId, SourceId.New,
@@ -63,10 +56,6 @@ namespace Ordering.API.Application.Subscribers.OrderStarted
                     return Task.FromResult(0);
                 }, CancellationToken.None
             ).ConfigureAwait(false); 
-/*
-            var b = await _aggregateStore
-                .LoadAsync<Buyer, BuyerId>(buyerId, CancellationToken.None)
-                .ConfigureAwait(false);*/
 
             var orderStatusChangedTosubmittedIntegrationEvent = new OrderStatusChangedToSubmittedIntegrationEvent(domainEvent.AggregateIdentity.Value, OrderStatus.Submitted.Name, b.BuyerName);
             await _endpoint.Publish(orderStatusChangedTosubmittedIntegrationEvent);

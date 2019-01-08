@@ -32,17 +32,15 @@ namespace Ordering.API.Application.Subscribers.OrderGracePeriodConfirmed
                 .LoadAsync<Order, OrderId>(domainEvent.AggregateIdentity, CancellationToken.None)
                 .ConfigureAwait(false);
 
-            /* var buyer =  await _aggregateStore
+            var buyer =  await _aggregateStore
                 .LoadAsync<Buyer, BuyerId>(order.GetBuyerId, CancellationToken.None)
-                .ConfigureAwait(false);*/
-
-            Console.Out.WriteLine("Publishing OrderStatusChangedToAwaitingValidationIntegrationEvent");
+                .ConfigureAwait(false);
 
             var orderStockList = domainEvent.AggregateEvent.OrderItems
                 .Select(orderItem => new OrderStockItem(orderItem.ProductId, orderItem.Units));
 
             var orderStatusChangedToAwaitingValidationIntegrationEvent = new OrderStatusChangedToAwaitingValidationIntegrationEvent(
-                order.Id.Value, orderStockList);
+                order.Id.Value, OrderStatus.AwaitingValidation.Name, orderStockList, buyer.BuyerName);
             await _endpoint.Publish(orderStatusChangedToAwaitingValidationIntegrationEvent);
         }
     }

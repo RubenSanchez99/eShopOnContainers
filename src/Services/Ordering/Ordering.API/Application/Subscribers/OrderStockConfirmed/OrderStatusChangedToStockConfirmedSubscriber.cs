@@ -36,11 +36,6 @@ namespace Ordering.API.Application.Subscribers.OrderStarted
                 .LoadAsync<Buyer, BuyerId>(order.GetBuyerId, CancellationToken.None)
                 .ConfigureAwait(false);
 
-            Console.Out.WriteLine("Publishing OrderStatusChangedToStockConfirmedIntegrationEvent");
-            Console.Out.WriteLine("OrderId: " + order.Id.Value);
-            Console.Out.WriteLine("OrderStatus: " + order.OrderStatus.Name);
-            Console.Out.WriteLine("BuyerName: " + buyer.BuyerName);
-
             var orderStatusChangedToStockConfirmedIntegrationEvent = new OrderStatusChangedToStockConfirmedIntegrationEvent(order.Id.Value, order.OrderStatus.Name, buyer.BuyerName);
             await _endpoint.Publish(orderStatusChangedToStockConfirmedIntegrationEvent);
         }

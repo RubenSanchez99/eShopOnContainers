@@ -31,7 +31,7 @@ namespace Ordering.ReadModel.QueryHandler
             {
                 var data = 
                     from tOrder in context.Orders
-                    where tOrder.BuyerIdentityGuid == query.userId.ToString()
+                    where tOrder.BuyerIdentityGuid == ("buyer-" + query.userId.ToString())
                     select new OrderSummaryReadModel
                     {
                         OrderNumber = tOrder.OrderNumber,

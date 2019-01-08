@@ -44,3 +44,15 @@ services:
     build:
       context: ./src/Services/Payment/Payment.API
       dockerfile: Dockerfile   
+  
+  webmvc:
+    image: eshop/webmvc:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: src/Web/WebMVC/Dockerfile   
+
+  ordering.signalrhub:
+    image: eshop/ordering.signalrhub:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: src/Services/Ordering/Ordering.SignalrHub/Dockerfile

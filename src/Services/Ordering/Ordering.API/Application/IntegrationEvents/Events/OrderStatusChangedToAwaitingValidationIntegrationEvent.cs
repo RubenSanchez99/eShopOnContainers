@@ -6,13 +6,17 @@
     public class OrderStatusChangedToAwaitingValidationIntegrationEvent
     {
         public string OrderId { get;}
+        public string OrderStatus { get; }
         public List<OrderStockItem> OrderStockItems { get; }
+        public string BuyerName { get; }
 
-        public OrderStatusChangedToAwaitingValidationIntegrationEvent(string orderId,
-            IEnumerable<OrderStockItem> orderStockItems)
+        public OrderStatusChangedToAwaitingValidationIntegrationEvent(string orderId, string orderStatus,
+            IEnumerable<OrderStockItem> orderStockItems, string buyerName)
         {
             OrderId = orderId;
+            OrderStatus = orderStatus;
             OrderStockItems = orderStockItems.ToList();
+            BuyerName = buyerName;
         }
     }
 

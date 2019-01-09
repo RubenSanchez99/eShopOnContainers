@@ -70,6 +70,8 @@ namespace Catalog.API
                     .AllowCredentials());
             });
 
+            services.Configure<CatalogSettings>(Configuration);
+
             // Configurar MassTransit
             services.AddScoped<IHostedService, MassTransitHostedService>();
 

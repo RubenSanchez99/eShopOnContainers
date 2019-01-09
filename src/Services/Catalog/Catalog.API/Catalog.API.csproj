@@ -4,6 +4,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="wwwroot\"/>
+    <Content Update="wwwroot;">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.App"/>

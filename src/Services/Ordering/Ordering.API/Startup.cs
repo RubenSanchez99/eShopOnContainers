@@ -17,7 +17,6 @@ using EventFlow.Extensions;
 using EventFlow.Autofac.Extensions;
 using EventFlow.Configuration;
 using EventFlow.MetadataProviders;
-using EventFlow.TestHelpers;
 using EventFlow.AspNetCore.MetadataProviders;
 using EventFlow.AspNetCore.Extensions;
 using EventFlow.Aspnetcore.Middlewares;
@@ -64,6 +63,17 @@ namespace Ordering.API
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             var containerBuilder = new ContainerBuilder();
+
+            services.AddEntityFrameworkNpgsql().AddDbContext<OrderingDbContext>(options =>
+            {
+                options.UseNpgsql(Configuration["ConnectionString"],
+                                     npgsqlOptionsAction: sqlOptions =>
+                                     {
+                                         sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
+                                         //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
+                                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 5);
+                                     });
+            });
 
             services.AddScoped<IHostedService, MassTransitHostedService>();
             services.AddScoped<UserCheckoutAcceptedIntegrationEventHandler>();

@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Ordering.ReadModel.Model;
 using EventFlow.EntityFramework.Extensions;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
+using System;
 
 namespace Ordering.ReadModel
 {

@@ -1,10 +1,10 @@
 ﻿using System;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Ordering.API.Migrations
 {
-    public partial class EventStore : Migration
+    public partial class Postgres : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -13,7 +13,7 @@ namespace Ordering.API.Migrations
                 columns: table => new
                 {
                     GlobalSequenceNumber = table.Column<long>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     BatchId = table.Column<Guid>(nullable: false),
                     AggregateName = table.Column<string>(nullable: true),
                     AggregateId = table.Column<string>(nullable: true),
@@ -32,7 +32,7 @@ namespace Ordering.API.Migrations
                 {
                     OrderId = table.Column<string>(nullable: false),
                     OrderNumber = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     BuyerIdentityGuid = table.Column<string>(nullable: true),
                     Date = table.Column<DateTime>(nullable: false),
                     Status = table.Column<string>(nullable: true),
@@ -53,7 +53,7 @@ namespace Ordering.API.Migrations
                 columns: table => new
                 {
                     OrderNumber = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     Date = table.Column<DateTime>(nullable: false),
                     Status = table.Column<string>(nullable: true),
                     Total = table.Column<decimal>(nullable: false)
@@ -68,7 +68,7 @@ namespace Ordering.API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<long>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     AggregateId = table.Column<string>(nullable: true),
                     AggregateName = table.Column<string>(nullable: true),
                     AggregateSequenceNumber = table.Column<int>(nullable: false),
@@ -85,7 +85,7 @@ namespace Ordering.API.Migrations
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
                     ProductId = table.Column<int>(nullable: false),
                     ProductName = table.Column<string>(nullable: true),
                     Units = table.Column<int>(nullable: false),
@@ -108,8 +108,7 @@ namespace Ordering.API.Migrations
                 name: "IX_EventEntity_AggregateId_AggregateSequenceNumber",
                 table: "EventEntity",
                 columns: new[] { "AggregateId", "AggregateSequenceNumber" },
-                unique: true,
-                filter: "[AggregateId] IS NOT NULL");
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_OrderReadModelOrderId",
@@ -117,11 +116,10 @@ namespace Ordering.API.Migrations
                 column: "OrderReadModelOrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SnapshotEntity_AggregateName_AggregateId_AggregateSequenceNumber",
+                name: "IX_SnapshotEntity_AggregateName_AggregateId_AggregateSequenceN~",
                 table: "SnapshotEntity",
                 columns: new[] { "AggregateName", "AggregateId", "AggregateSequenceNumber" },
-                unique: true,
-                filter: "[AggregateName] IS NOT NULL AND [AggregateId] IS NOT NULL");
+                unique: true);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

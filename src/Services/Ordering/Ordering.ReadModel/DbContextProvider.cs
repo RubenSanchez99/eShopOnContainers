@@ -1,6 +1,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using EventFlow.EntityFramework;
+using Microsoft.Extensions.Configuration;
 
 namespace Ordering.ReadModel
 {
@@ -8,10 +9,10 @@ namespace Ordering.ReadModel
     {
         private readonly DbContextOptions<OrderingDbContext> _options;
 
-        public DbContextProvider(string msSqlConnectionString)
+        public DbContextProvider(string connectionString, IConfiguration config)
         {
             _options = new DbContextOptionsBuilder<OrderingDbContext>()
-                .UseSqlServer(@"Server=sql.data;Initial Catalog=CapacitacionMicroservicios.OrderingDb;User Id=sa;Password=Pass@word")
+                .UseNpgsql(config["ConnectionString"])
                 .Options;
         }
 

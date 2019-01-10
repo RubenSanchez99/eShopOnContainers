@@ -5,7 +5,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - ConnectionString=Server=sql.data;Database=CapacitacionMicroservicios.IdentityDb;User Id=sa;Password=Pass@word
+      - ConnectionString=Server=sql.data;Database=CapacitacionMicroservicios.IdentityDb;User Id=postgres;Password=pass;
       - LocationApiClient=http://${ESHOP_EXTERNAL_DNS_NAME_OR_IP}:5109
       - MarketingApiClient=http://${ESHOP_EXTERNAL_DNS_NAME_OR_IP}:5110
       - BasketApiClient=http://${ESHOP_EXTERNAL_DNS_NAME_OR_IP}:5103
@@ -19,7 +19,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - ConnectionString=Server=sql.data;Initial Catalog=CapacitacionMicroservicios.CatalogDb;User Id=sa;Password=Pass@word
+      - ConnectionString=Server=sql.data;Database=CapacitacionMicroservicios.CatalogDb;User Id=postgres;Password=pass;
       - PicBaseUrl=http://${ESHOP_EXTERNAL_DNS_NAME_OR_IP}:5202/api/v1/catalog/items/[0]/pic/
       - EventBusConnection=rabbitmq
       - EventBusUserName=guest
@@ -49,7 +49,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
-      - ConnectionString=Server=sql.data;Initial Catalog=CapacitacionMicroservicios.OrderingDb;User Id=sa;Password=Pass@word
+      - ConnectionString=Server=sql.data;Database=CapacitacionMicroservicios.OrderingDb;User Id=postgres;Password=pass;
       - EventBusConnection=rabbitmq
       - EventBusUserName=guest
       - EventBusPassword=guest  

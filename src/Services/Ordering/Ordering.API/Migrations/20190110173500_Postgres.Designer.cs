@@ -2,30 +2,29 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Ordering.ReadModel;
 
 namespace Ordering.API.Migrations
 {
     [DbContext(typeof(OrderingDbContext))]
-    [Migration("20190108032239_EventStore")]
-    partial class EventStore
+    [Migration("20190110173500_Postgres")]
+    partial class Postgres
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.1.4-rtm-31024")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn)
+                .HasAnnotation("ProductVersion", "2.1.3-rtm-32065")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             modelBuilder.Entity("EventFlow.EntityFramework.EventStores.EventEntity", b =>
                 {
                     b.Property<long>("GlobalSequenceNumber")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("AggregateId");
 
@@ -42,8 +41,7 @@ namespace Ordering.API.Migrations
                     b.HasKey("GlobalSequenceNumber");
 
                     b.HasIndex("AggregateId", "AggregateSequenceNumber")
-                        .IsUnique()
-                        .HasFilter("[AggregateId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("EventEntity");
                 });
@@ -51,8 +49,7 @@ namespace Ordering.API.Migrations
             modelBuilder.Entity("EventFlow.EntityFramework.SnapshotStores.SnapshotEntity", b =>
                 {
                     b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("AggregateId");
 
@@ -67,8 +64,7 @@ namespace Ordering.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AggregateName", "AggregateId", "AggregateSequenceNumber")
-                        .IsUnique()
-                        .HasFilter("[AggregateName] IS NOT NULL AND [AggregateId] IS NOT NULL");
+                        .IsUnique();
 
                     b.ToTable("SnapshotEntity");
                 });
@@ -76,8 +72,7 @@ namespace Ordering.API.Migrations
             modelBuilder.Entity("Ordering.ReadModel.Model.OrderItemReadModel", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("OrderReadModelOrderId");
 
@@ -114,8 +109,7 @@ namespace Ordering.API.Migrations
                     b.Property<string>("Description");
 
                     b.Property<int>("OrderNumber")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("Status");
 
@@ -133,8 +127,7 @@ namespace Ordering.API.Migrations
             modelBuilder.Entity("Ordering.ReadModel.Model.OrderSummaryReadModel", b =>
                 {
                     b.Property<int>("OrderNumber")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                        .ValueGeneratedOnAdd();
 
                     b.Property<DateTime>("Date");
 

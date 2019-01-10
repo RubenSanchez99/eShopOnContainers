@@ -2,13 +2,11 @@ version: '3.7'
 
 services:  
   sql.data:
-    image: microsoft/mssql-server-linux:2017-latest
+    image: postgres
     environment:
-      - MSSQL_SA_PASSWORD=Pass@word
-      - ACCEPT_EULA=Y
-      - MSSQL_PID=Developer
+      - POSTGRES_PASSWORD=pass
     ports:
-      - "5433:1433"
+      - "5432:5432"
 
   basket.data:
     image: redis

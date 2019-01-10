@@ -9,7 +9,6 @@
     <PackageReference Include="Microsoft.AspNetCore.App"/>
     <PackageReference Include="EventFlow.Autofac" Version="0.67.3697"/>
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.3.0"/>
-    <PackageReference Include="EventFlow.TestHelpers" Version="0.67.3697"/>
     <PackageReference Include="EventFlow.AspNetCore" Version="0.67.3697"/>
     <PackageReference Include="MassTransit" Version="5.1.5"/>
     <PackageReference Include="MassTransit.RabbitMQ" Version="5.1.5"/>
@@ -20,8 +19,7 @@
     <PackageReference Include="EventFlow.EventStores.EventStore" Version="0.67.3697"/>
     <PackageReference Include="MassTransit.Extensions.Logging" Version="5.1.5"/>
     <PackageReference Include="MassTransit.EntityFrameworkCore" Version="5.1.5"/>
-    <PackageReference Include="MassTransit.EntityFramework" Version="5.1.5"/>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.1.4"/>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="2.1.2" />
     <PackageReference Include="MassTransit.Quartz" Version="5.1.5"/>
   </ItemGroup>
   <ItemGroup>
@@ -31,5 +29,10 @@
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.3"/>
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.3"/>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 </Project>

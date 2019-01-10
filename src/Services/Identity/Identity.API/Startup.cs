@@ -32,12 +32,12 @@ namespace Identity.API
         {
             services.AddDbContext<ApplicationDbContext>(options =>
             // Cambiar SQLite por SQL Server
-            options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),
-                                     sqlServerOptionsAction: sqlOptions =>
+            options.UseNpgsql(Configuration["ConnectionString"],
+                                     npgsqlOptionsAction: sqlOptions =>
                                      {
                                          sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
                                          //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
+                                         
                                      }));
 
             services.AddIdentity<ApplicationUser, IdentityRole>()

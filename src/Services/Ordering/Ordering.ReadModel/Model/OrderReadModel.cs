@@ -57,12 +57,6 @@ namespace Ordering.ReadModel.Model
             }
         }
 
-        public void Apply(IReadModelContext context, IDomainEvent<Order, OrderId, OrderItemUnitsAddedDomainEvent> domainEvent)
-        {
-            var itemToUpdate = this.OrderItems.Single(x => x.ProductId == domainEvent.AggregateEvent.ProductId);
-            itemToUpdate.Units += domainEvent.AggregateEvent.UnitsAdded;
-        }
-
         public void Apply(IReadModelContext context, IDomainEvent<Order, OrderId, OrderStatusChangedToAwaitingValidationDomainEvent> domainEvent)
         {
             this.Status = OrderStatus.AwaitingValidation.Name;

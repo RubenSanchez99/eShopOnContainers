@@ -17,8 +17,6 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
     public class Order : AggregateRoot<Order, OrderId>,
     IEmit<OrderStartedDomainEvent>,
     IEmit<OrderItemAddedDomainEvent>,
-    //IEmit<OrderItemUnitsAddedDomainEvent>,
-    //IEmit<OrderItemNewDiscountSetDomainEvent>,
     IEmit<OrderPaymentMethodChangedDomainEvent>,
     IEmit<OrderBuyerChangedDomainEvent>,
     IEmit<OrderStatusChangedToAwaitingValidationDomainEvent>,
@@ -99,17 +97,14 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
                     if (item.Discount > existingOrderForProduct.Discount)
                     {
                         existingOrderForProduct.SetNewDiscount(item.Discount);
-                        //Emit(new OrderItemNewDiscountSetDomainEvent(item.ProductId, item.Discount));
                     }
 
                     existingOrderForProduct.AddUnits(item.Units);
-                    //Emit(new OrderItemUnitsAddedDomainEvent(item.ProductId, item.Units));
                 }
                 else
                 {
                     //add validated new order item
                     itemList.Add(item);
-                    //Emit(new OrderItemAddedDomainEvent(item.ProductId, item.GetOrderItemProductName(), item.GetPictureUri(), item.UnitPrice, item.Discount, item.Units));
                 }
             }
             return itemList;
@@ -147,20 +142,6 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
         {
             var orderItem = new OrderItem(OrderItemId.New, aggregateEvent.ProductId, aggregateEvent.ProductName, aggregateEvent.UnitPrice, aggregateEvent.Discount, aggregateEvent.PictureUrl, aggregateEvent.Units);
             _orderItems.Add(orderItem);
-        }
-
-        public void Apply(OrderItemUnitsAddedDomainEvent aggregateEvent)
-        {
-            var existingOrderForProduct = _orderItems.Where(o => o.ProductId == aggregateEvent.ProductId)
-                .SingleOrDefault();
-            existingOrderForProduct.AddUnits(aggregateEvent.UnitsAdded);
-        }
-
-        public void Apply(OrderItemNewDiscountSetDomainEvent aggregateEvent)
-        {
-            var existingOrderForProduct = _orderItems.Where(o => o.ProductId == aggregateEvent.ProductId)
-                .SingleOrDefault();
-            existingOrderForProduct.SetNewDiscount(aggregateEvent.NewDiscount);
         }
 
         public void SetPaymentId(PaymentMethodId id)

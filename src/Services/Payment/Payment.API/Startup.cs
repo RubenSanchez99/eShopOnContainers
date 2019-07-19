@@ -40,10 +40,10 @@ namespace Payment.API
             {
                 var busControl = Bus.Factory.CreateUsingRabbitMq(sbc => 
                 {
-                    var host = sbc.Host(new Uri("rabbitmq://rabbitmq"), h =>
+                    var host = sbc.Host(new Uri(Configuration["EventBusConnection"]), h =>
                     {
-                        h.Username("guest");
-                        h.Password("guest");
+                        h.Username(Configuration["EventBusUserName"]);
+                        h.Password(Configuration["EventBusPassword"]);
                     });
                     sbc.ReceiveEndpoint(host, "validate_payment_queue", e => 
                     {

@@ -45,6 +45,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using System.Reflection;
+using EventFlow.Aggregates;
 
 namespace Ordering.API
 {
@@ -74,101 +75,10 @@ namespace Ordering.API
                                          sqlOptions.EnableRetryOnFailure(maxRetryCount: 5);
                                      });
             });
+           
+            ConfigureEventFlow(services, containerBuilder);
 
-            services.AddScoped<IHostedService, MassTransitHostedService>();
-            services.AddScoped<UserCheckoutAcceptedIntegrationEventHandler>();
-            services.AddScoped<OrderStockConfirmedIntegrationEventHandler>();
-            services.AddScoped<OrderStockRejectedIntegrationEventHandler>();
-            services.AddScoped<OrderPaymentSuccededIntegrationEventHandler>();
-            services.AddScoped<OrderPaymentFailedIntegrationEventHandler>();
-            services.AddScoped<GracePeriodConfirmedIntegrationEventHandler>();
-            
-            var events = new List<Type>() {
-                typeof(OrderStartedDomainEvent),
-                typeof(BuyerCreatedDomainEvent),
-                typeof(BuyerPaymentMethodAddedDomainEvent),
-                typeof(BuyerAndPaymentMethodVerifiedDomainEvent),
-                typeof(OrderStatusChangedToAwaitingValidationDomainEvent),
-                typeof(OrderStatusChangedToPaidDomainEvent),
-                typeof(OrderStatusChangedToStockConfirmedDomainEvent),
-                typeof(OrderBuyerChangedDomainEvent),
-                typeof(OrderPaymentMethodChangedDomainEvent),
-                typeof(OrderCancelledDomainEvent),
-                typeof(OrderShippedDomainEvent)
-            };
-
-            var commandHandlers = new List<Type> {
-                typeof(CreateOrderCommandHandler),
-                typeof(CancelOrderCommandHandler),
-                typeof(ShipOrderCommandHandler),
-                typeof(CreateOrderDraftCommandHandler)
-            };
-
-            var container = EventFlowOptions.New
-                .UseAutofacContainerBuilder(containerBuilder)
-                .UseConsoleLog()
-                .AddEvents(events)
-                .AddCommandHandlers(commandHandlers)
-                .AddSubscribers(typeof(Startup).Assembly)
-                .AddQueryHandlers(typeof(OrderingDbContext).Assembly)
-                .AddEntityFrameworkReadModel();
-
-            containerBuilder.Register(c =>
-            {
-                var busControl = Bus.Factory.CreateUsingRabbitMq(sbc => 
-                {
-                    var host = sbc.Host(new Uri("rabbitmq://rabbitmq"), h =>
-                    {
-                        h.Username("guest");
-                        h.Password("guest");
-                    });
-                    sbc.ReceiveEndpoint(host, "basket_checkout_queue", e => 
-                    {
-                        e.Consumer<UserCheckoutAcceptedIntegrationEventHandler>(c);
-                    });
-                    sbc.ReceiveEndpoint(host, "stock_confirmed_queue", e => 
-                    {
-                        e.Consumer<OrderStockConfirmedIntegrationEventHandler>(c);
-                    });
-                    sbc.ReceiveEndpoint(host, "stock_rejected_queue", e => 
-                    {
-                        e.Consumer<OrderStockRejectedIntegrationEventHandler>(c);
-                    });
-                    sbc.ReceiveEndpoint(host, "payment_succeded_queue", e => 
-                    {
-                        e.Consumer<OrderPaymentSuccededIntegrationEventHandler>(c);
-                    });
-                    sbc.ReceiveEndpoint(host, "payment_failed_queue", e => 
-                    {
-                        e.Consumer<OrderPaymentFailedIntegrationEventHandler>(c);
-                    });
-                    sbc.ReceiveEndpoint(host, "graceperiod_confirmed_queue", e => 
-                    {
-                        e.Consumer<GracePeriodConfirmedIntegrationEventHandler>(c);
-                    });
-                    sbc.ReceiveEndpoint(host, "order_validation_state", e =>
-                    {
-                        e.UseRetry(x => 
-                            {
-                                x.Handle<DbUpdateConcurrencyException>();
-                                x.Interval(5, TimeSpan.FromMilliseconds(100));
-                            }); // Add the retry middleware for optimistic concurrency
-                        e.StateMachineSaga(new GracePeriodStateMachine(c.Resolve<ICommandBus>()), new InMemorySagaRepository<GracePeriod>());
-                    });
-                    sbc.UseExtensionsLogging(_loggerFactory);
-                    sbc.UseInMemoryScheduler();
-                });
-                var consumeObserver = new ConsumeObserver(_loggerFactory.CreateLogger<ConsumeObserver>());
-                busControl.ConnectConsumeObserver(consumeObserver);
-
-                var sendObserver = new SendObserver(_loggerFactory.CreateLogger<SendObserver>());
-                busControl.ConnectSendObserver(sendObserver);
-
-                return busControl;
-            })
-            .As<IBusControl>()
-            .As<IPublishEndpoint>()
-            .SingleInstance();
+            ConfigureMassTransit(services, containerBuilder);            
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IIdentityService, IdentityService>();
@@ -216,7 +126,7 @@ namespace Ordering.API
             }).AddJwtBearer(options =>
             {
                 options.Authority = "http://identity.api";
-                options.MetadataAddress = "http://identity.api/.well-known/openid-configuration";
+                options.MetadataAddress = Configuration["IdentityUrlExternal"] + "/.well-known/openid-configuration";
                 options.RequireHttpsMetadata = false; 
                 options.Audience = "http://identity.api/resources";
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
@@ -229,6 +139,97 @@ namespace Ordering.API
                 };
 
             });
+        }
+
+        private void ConfigureEventFlow(IServiceCollection services, ContainerBuilder containerBuilder)
+        {
+            var events = new List<Type>() {
+                typeof(OrderStartedDomainEvent),
+                typeof(BuyerCreatedDomainEvent),
+                typeof(BuyerPaymentMethodAddedDomainEvent),
+                typeof(BuyerAndPaymentMethodVerifiedDomainEvent),
+                typeof(OrderStatusChangedToAwaitingValidationDomainEvent),
+                typeof(OrderStatusChangedToPaidDomainEvent),
+                typeof(OrderStatusChangedToStockConfirmedDomainEvent),
+                typeof(OrderBuyerChangedDomainEvent),
+                typeof(OrderPaymentMethodChangedDomainEvent),
+                typeof(OrderCancelledDomainEvent),
+                typeof(OrderShippedDomainEvent)
+            };
+
+            var commandHandlers = new List<Type> {
+                typeof(CreateOrderCommandHandler),
+                typeof(CancelOrderCommandHandler),
+                typeof(ShipOrderCommandHandler),
+                typeof(CreateOrderDraftCommandHandler)
+            };
+
+            var container = EventFlowOptions.New
+                .UseAutofacContainerBuilder(containerBuilder)
+                .UseConsoleLog()
+                .AddEvents(events)
+                .AddCommandHandlers(commandHandlers)
+                .AddSubscribers(typeof(Startup).Assembly)
+                .AddQueryHandlers(typeof(OrderingDbContext).Assembly)
+                .AddEntityFrameworkReadModel();
+        }
+
+        private void ConfigureMassTransit(IServiceCollection services, ContainerBuilder containerBuilder)
+        {
+            services.AddScoped<IHostedService, MassTransitHostedService>();
+            services.AddScoped<UserCheckoutAcceptedIntegrationEventHandler>();
+
+            containerBuilder.Register(c =>
+            {
+                var busControl = Bus.Factory.CreateUsingRabbitMq(sbc => 
+                {
+                    var host = sbc.Host(new Uri(Configuration["EventBusConnection"]), h =>
+                    {
+                        h.Username(Configuration["EventBusUserName"]);
+                        h.Password(Configuration["EventBusPassword"]);
+                    });
+                    sbc.ReceiveEndpoint(host, "basket_checkout_queue", e => 
+                    {
+                        e.Consumer<UserCheckoutAcceptedIntegrationEventHandler>(c);
+                    });
+                    sbc.ReceiveEndpoint(host, "stock_confirmed_queue", e => 
+                    {
+                    });
+                    sbc.ReceiveEndpoint(host, "stock_rejected_queue", e => 
+                    {
+                    });
+                    sbc.ReceiveEndpoint(host, "payment_succeded_queue", e => 
+                    {
+                    });
+                    sbc.ReceiveEndpoint(host, "payment_failed_queue", e => 
+                    {
+                    });
+                    sbc.ReceiveEndpoint(host, "graceperiod_confirmed_queue", e => 
+                    {
+                    });
+                    sbc.ReceiveEndpoint(host, "order_validation_state", e =>
+                    {
+                        e.UseRetry(x => 
+                            {
+                                x.Handle<DbUpdateConcurrencyException>();
+                                x.Interval(5, TimeSpan.FromMilliseconds(100));
+                            }); // Add the retry middleware for optimistic concurrency
+                        e.StateMachineSaga(new GracePeriodStateMachine(c.Resolve<IAggregateStore>()), new InMemorySagaRepository<GracePeriod>());
+                    });
+                    sbc.UseExtensionsLogging(_loggerFactory);
+                    sbc.UseInMemoryScheduler();
+                });
+                var consumeObserver = new ConsumeObserver(_loggerFactory.CreateLogger<ConsumeObserver>());
+                busControl.ConnectConsumeObserver(consumeObserver);
+
+                var sendObserver = new SendObserver(_loggerFactory.CreateLogger<SendObserver>());
+                busControl.ConnectSendObserver(sendObserver);
+
+                return busControl;
+            })
+            .As<IBusControl>()
+            .As<IPublishEndpoint>()
+            .SingleInstance();
         }
 
         protected virtual void ConfigureAuth(IApplicationBuilder app)

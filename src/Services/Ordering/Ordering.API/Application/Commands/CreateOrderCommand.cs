@@ -7,6 +7,7 @@ using System.Linq;
 using Ordering.Domain.AggregatesModel.OrderAggregate;
 using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
 using EventFlow.Commands;
+using EventFlow.Core;
 
 namespace Ordering.API.Application.Commands
 {
@@ -55,14 +56,14 @@ namespace Ordering.API.Application.Commands
         [DataMember]
         public IEnumerable<OrderItemDTO> OrderItems => _orderItems;
 
-        public CreateOrderCommand(OrderId id) : base(id)
+        public CreateOrderCommand(OrderId id, ISourceId sourceId) : base(id, sourceId)
         {
             _orderItems = new List<OrderItemDTO>();
         }
 
-        public CreateOrderCommand(OrderId id, List<BasketItem> basketItems, string userId, string userName, string city, string street, string state, string country, string zipcode,
+        public CreateOrderCommand(OrderId id, ISourceId sourceId, List<BasketItem> basketItems, string userId, string userName, string city, string street, string state, string country, string zipcode,
             string cardNumber, string cardHolderName, DateTime cardExpiration,
-            string cardSecurityNumber, int cardTypeId) : this(id)
+            string cardSecurityNumber, int cardTypeId) : this(id, sourceId)
         {
             _orderItems = basketItems.ToOrderItemsDTO().ToList();
             UserId = userId;

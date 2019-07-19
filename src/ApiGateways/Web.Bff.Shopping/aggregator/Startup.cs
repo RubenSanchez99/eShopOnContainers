@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Timeout;
-using Swashbuckle.AspNetCore.Swagger;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -57,12 +56,6 @@ namespace Web.Shopping.HttpAggregator
 
             app.UseMvc();
 
-            app.UseSwagger().UseSwaggerUI(c =>
-           {
-               c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/v1/swagger.json", "Purchase BFF V1");
-           });
-
-
         }
     }
 
@@ -90,17 +83,6 @@ namespace Web.Shopping.HttpAggregator
                         "postman",
                     }
                 };
-                options.Events = new JwtBearerEvents()
-                {
-                    OnAuthenticationFailed = async ctx =>
-                    {
-                        int i = 0;
-                    },
-                    OnTokenValidated = async ctx =>
-                    {
-                        int i = 0;
-                    }
-                };
             });
 
             return services;
@@ -112,18 +94,6 @@ namespace Web.Shopping.HttpAggregator
             services.Configure<UrlsConfig>(configuration.GetSection("urls"));
 
             services.AddMvc();
-
-            services.AddSwaggerGen(options =>
-            {
-                options.DescribeAllEnumsAsStrings();
-                options.SwaggerDoc("v1", new Swashbuckle.AspNetCore.Swagger.Info
-                {
-                    Title = "Shopping Aggregator for Web Clients",
-                    Version = "v1",
-                    Description = "Shopping Aggregator for Web Clients",
-                    TermsOfService = "Terms Of Service"
-                });
-            });
 
             services.AddCors(options =>
             {

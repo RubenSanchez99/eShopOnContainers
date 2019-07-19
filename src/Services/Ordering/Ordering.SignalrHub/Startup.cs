@@ -73,10 +73,10 @@ namespace Ordering.SignalrHub
             {
                 var busControl = Bus.Factory.CreateUsingRabbitMq(sbc => 
                 {
-                    var host = sbc.Host(new Uri("rabbitmq://rabbitmq"), h =>
+                    var host = sbc.Host(new Uri(Configuration["EventBusConnection"]), h =>
                     {
-                        h.Username("guest");
-                        h.Password("guest");
+                        h.Username(Configuration["EventBusUserName"]);
+                        h.Password(Configuration["EventBusPassword"]);
                     });
                     sbc.ReceiveEndpoint(host, "order_awaitingvalidation_signalr_queue", e => 
                     {
@@ -162,7 +162,7 @@ namespace Ordering.SignalrHub
             }).AddJwtBearer(options =>
             {
                 options.Authority = "http://identity.api";
-                options.MetadataAddress = "http://identity.api/.well-known/openid-configuration";
+                options.MetadataAddress = Configuration["IdentityUrlExternal"] + "/.well-known/openid-configuration";
                 options.RequireHttpsMetadata = false; 
                 options.Audience = "http://identity.api/resources";
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters

@@ -84,10 +84,10 @@ namespace Catalog.API
             {
                 var busControl = Bus.Factory.CreateUsingRabbitMq(sbc => 
                     {
-                        var host = sbc.Host(new Uri("rabbitmq://rabbitmq"), h =>
+                        var host = sbc.Host(new Uri(Configuration["EventBusConnection"]), h =>
                         {
-                            h.Username("guest");
-                            h.Password("guest");
+                            h.Username(Configuration["EventBusUserName"]);
+                            h.Password(Configuration["EventBusPassword"]);
                         });
                         sbc.ReceiveEndpoint(host, "catalog_validation_queue", e => 
                         {
@@ -134,8 +134,6 @@ namespace Catalog.API
             app.UseMvc();
 
             app.UseCors("CorsPolicy");
-
-            db.Database.Migrate();
         }
     }
 }

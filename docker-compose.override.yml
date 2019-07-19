@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-  identity.api:
+  identity:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
@@ -15,7 +15,7 @@ services:
     ports:
       - "5105:80"   
 
-  catalog.api:
+  catalog:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
@@ -28,7 +28,7 @@ services:
     ports:
       - "5101:80"
 
-  basket.api:
+  basket:
     #build:
     #  dockerfile: Dockerfile-debug
     #  target: debug
@@ -45,7 +45,7 @@ services:
     ports:
       - "5103:80"
 
-  ordering.api:
+  ordering:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
@@ -77,7 +77,7 @@ services:
     volumes:
       - ./src/ApiGateways/Web.Bff.Shopping/apigw:${ESHOP_OCELOT_VOLUME_SPEC:-/app/configuration}
 
-  payment.api:
+  payment:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80
@@ -108,7 +108,7 @@ services:
     ports:
       - "5100:80"
 
-  ordering.signalrhub:
+  signalrhub:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:80     

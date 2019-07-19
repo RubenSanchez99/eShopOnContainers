@@ -16,7 +16,6 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
 {
     public class Order : AggregateRoot<Order, OrderId>,
     IEmit<OrderStartedDomainEvent>,
-    IEmit<OrderItemAddedDomainEvent>,
     IEmit<OrderPaymentMethodChangedDomainEvent>,
     IEmit<OrderBuyerChangedDomainEvent>,
     IEmit<OrderStatusChangedToAwaitingValidationDomainEvent>,
@@ -116,7 +115,6 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
             var itemList = CreateItemList(items);
 
             var orderStarted = new OrderStartedDomainEvent(DateTime.UtcNow, address, userId, userName, cardTypeId, cardNumber, cardSecurityNumber, cardHolderName, cardExpiration, itemList);
-            Console.Out.WriteLine(JsonConvert.SerializeObject(orderStarted, Formatting.Indented));
             Emit(orderStarted);
             return ExecutionResult.Success();
         }
@@ -129,19 +127,6 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
             _orderDate = aggregateEvent.OrderDate;
             Address = aggregateEvent.Address;
             _orderItems = aggregateEvent.Items.ToList();
-        }
-
-        public IExecutionResult AddOrderItem(int productId, string productName, decimal unitPrice, decimal discount, string pictureUrl, int units = 1)
-        {
-            
-
-            return ExecutionResult.Success();
-        }
-
-        public void Apply(OrderItemAddedDomainEvent aggregateEvent)
-        {
-            var orderItem = new OrderItem(OrderItemId.New, aggregateEvent.ProductId, aggregateEvent.ProductName, aggregateEvent.UnitPrice, aggregateEvent.Discount, aggregateEvent.PictureUrl, aggregateEvent.Units);
-            _orderItems.Add(orderItem);
         }
 
         public void SetPaymentId(PaymentMethodId id)
@@ -166,10 +151,8 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
 
         public void SetAwaitingValidationStatus()
         {
-            Console.Out.WriteLine("Setting awaiting validation status for order with value " + OrderStatus.FromValue<OrderStatus>(_orderStatusId).Name);
             if (_orderStatusId == OrderStatus.Submitted.Id)
             {
-                Console.Out.WriteLine("Setting OrderStatusChangedToAwaitingValidationDomainEvent for order with value " + OrderStatus.FromValue<OrderStatus>(_orderStatusId).Name);
                 Emit(new OrderStatusChangedToAwaitingValidationDomainEvent(_orderItems));
             }
         }
@@ -181,10 +164,8 @@ namespace Ordering.Domain.AggregatesModel.OrderAggregate
 
         public void SetStockConfirmedStatus()
         {
-            Console.Out.WriteLine("Setting stock confirmed with status " + _orderStatusId);
             if (_orderStatusId == OrderStatus.AwaitingValidation.Id)
             {
-                Console.Out.WriteLine("Emitin OrderStatusChangedToStockConfirmed");
                 Emit(new OrderStatusChangedToStockConfirmedDomainEvent());
             }
         }

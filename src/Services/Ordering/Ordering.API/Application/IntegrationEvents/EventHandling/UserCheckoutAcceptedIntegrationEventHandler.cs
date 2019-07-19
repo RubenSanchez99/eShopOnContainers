@@ -11,6 +11,7 @@ using Ordering.API.Application.Commands;
 using Ordering.Domain.AggregatesModel.OrderAggregate;
 using Ordering.Domain.AggregatesModel.OrderAggregate.Identity;
 using Microsoft.Extensions.Logging;
+using EventFlow.Core;
 
 namespace Ordering.API.Application.IntegrationEvents.EventHandling
 {
@@ -37,7 +38,7 @@ namespace Ordering.API.Application.IntegrationEvents.EventHandling
 
             if (context.Message.RequestId != Guid.Empty)
             {
-                var createOrderCommand = new CreateOrderCommand(orderId, context.Message.Basket.Items, context.Message.UserId, context.Message.UserName, context.Message.City, context.Message.Street, 
+                var createOrderCommand = new CreateOrderCommand(orderId, new SourceId(context.Message.RequestId.ToString()), context.Message.Basket.Items, context.Message.UserId, context.Message.UserName, context.Message.City, context.Message.Street, 
                     context.Message.State, context.Message.Country, context.Message.ZipCode,
                     context.Message.CardNumber, context.Message.CardHolderName, context.Message.CardExpiration,
                     context.Message.CardSecurityNumber, context.Message.CardTypeId);
@@ -46,7 +47,7 @@ namespace Ordering.API.Application.IntegrationEvents.EventHandling
                 
                 if (result.IsSuccess)
                 {
-                    var orderStartedIntegrationEvent = new OrderStartedIntegrationEvent(context.Message.UserId, orderId.Value, orderItems.ToList());
+                    var orderStartedIntegrationEvent = new OrderStartedIntegrationEvent(context.Message.UserId, orderId.Value, orderItems.ToList(), context.Message.RequestId);
                     await _endpoint.Publish(orderStartedIntegrationEvent);
                 }
             }

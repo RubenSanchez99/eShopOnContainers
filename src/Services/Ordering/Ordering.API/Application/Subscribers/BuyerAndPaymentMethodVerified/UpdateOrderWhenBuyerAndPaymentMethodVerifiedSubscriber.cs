@@ -25,9 +25,6 @@ namespace Ordering.API.Application.Subscribers.BuyerAndPaymentMethodVerified
         public async Task HandleAsync(IDomainEvent<Buyer, BuyerId, BuyerAndPaymentMethodVerifiedDomainEvent> domainEvent, CancellationToken cancellationToken)
         {
             var orderId = domainEvent.AggregateEvent.OrderId;
-
-            Console.Out.WriteLine("Setting buyer and payment method for " + orderId.Value);
-            Console.Out.WriteLine($"Buyer: {domainEvent.AggregateIdentity.Value} PaymentMethod: {domainEvent.AggregateEvent.PaymentId.Value}");
             
             await _aggregateStore.UpdateAsync<Order, OrderId>(orderId, SourceId.New,
                 (order, c) => {

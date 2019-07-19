@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace Catalog.API.Migrations
 {
@@ -23,8 +22,7 @@ namespace Catalog.API.Migrations
                 name: "CatalogBrand",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                    Id = table.Column<int>(nullable: false),
                     Brand = table.Column<string>(maxLength: 100, nullable: false)
                 },
                 constraints: table =>
@@ -36,8 +34,7 @@ namespace Catalog.API.Migrations
                 name: "CatalogType",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                    Id = table.Column<int>(nullable: false),
                     Type = table.Column<string>(maxLength: 100, nullable: false)
                 },
                 constraints: table =>
@@ -49,8 +46,7 @@ namespace Catalog.API.Migrations
                 name: "Catalog",
                 columns: table => new
                 {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.SerialColumn),
+                    Id = table.Column<int>(nullable: false),
                     Name = table.Column<string>(maxLength: 50, nullable: false),
                     Description = table.Column<string>(nullable: true),
                     Price = table.Column<decimal>(nullable: false),

@@ -2,19 +2,19 @@ version: '3.7'
 
 services:
 
-  identity.api:
+  identity:
     image: eshop/identity.api:${TAG:-latest}
     build:
       context: ./src/Services/Identity/Identity.API
       dockerfile: Dockerfile    
 
-  basket.api:
+  basket:
     image: cdis-capacitacion/basket.api
     build:
       context: ./src/Services/Basket/Basket.API
       dockerfile: Dockerfile    
 
-  catalog.api:
+  catalog:
     image: cdis-capacitacion/catalog.api
     build:
       context: ./src/Services/Catalog/Catalog.API
@@ -33,13 +33,13 @@ services:
       context: .
       dockerfile: src/ApiGateways/Web.Bff.Shopping/aggregator/Dockerfile
 
-  ordering.api:
+  ordering:
     image: cdis-capacitacion/ordering.api:${TAG:-latest}
     build:
       context: .
       dockerfile: src/Services/Ordering/Ordering.API/Dockerfile
 
-  payment.api:
+  payment:
     image: cdis-capacitacion/payment.api
     build:
       context: ./src/Services/Payment/Payment.API
@@ -51,7 +51,7 @@ services:
       context: .
       dockerfile: src/Web/WebMVC/Dockerfile   
 
-  ordering.signalrhub:
+  signalrhub:
     image: eshop/ordering.signalrhub:${TAG:-latest}
     build:
       context: .

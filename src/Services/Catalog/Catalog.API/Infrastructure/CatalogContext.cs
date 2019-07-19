@@ -19,6 +19,8 @@ namespace Catalog.API.Infrastructure
             builder.ApplyConfiguration(new CatalogBrandEntityTypeConfiguration());
             builder.ApplyConfiguration(new CatalogTypeEntityTypeConfiguration());
             builder.ApplyConfiguration(new CatalogItemEntityTypeConfiguration());
+
+            builder.ForNpgsqlUseIdentityColumns();
         }     
     }
 }

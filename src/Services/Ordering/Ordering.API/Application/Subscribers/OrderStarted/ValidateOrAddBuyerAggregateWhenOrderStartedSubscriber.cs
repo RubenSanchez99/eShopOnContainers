@@ -44,8 +44,6 @@ namespace Ordering.API.Application.Subscribers.OrderStarted
                         buyer.Create(domainEvent.AggregateEvent.UserId, domainEvent.AggregateEvent.UserName);
                     }
 
-                    Console.Out.WriteLine("Updating - Card number: " + domainEvent.AggregateEvent.CardNumber + " IsValid: " + !string.IsNullOrWhiteSpace(domainEvent.AggregateEvent.CardNumber));
-
                     buyer.VerifyOrAddPaymentMethod(cardTypeId,
                                         $"Payment Method on {DateTime.UtcNow}",
                                         domainEvent.AggregateEvent.CardNumber,

@@ -48,22 +48,6 @@ namespace OcelotApiGw
                         ValidIssuer = "http://localhost:5105",
                         ValidAudiences = new[] { "orders", "basket", "locations", "marketing", "mobileshoppingagg", "webshoppingagg" }
                     };
-                    x.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents()
-                    {
-                        OnAuthenticationFailed = async ctx =>
-                        {
-                            int i = 0;
-                        },
-                        OnTokenValidated = async ctx =>
-                        {
-                            int i = 0;
-                        },
-
-                        OnMessageReceived = async ctx =>
-                        {
-                            int i = 0;
-                        }
-                    };
                 });
             
             services.AddOcelot(_cfg);

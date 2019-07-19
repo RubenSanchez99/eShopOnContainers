@@ -60,8 +60,12 @@ namespace Web.Shopping.HttpAggregator.Controllers
                 });
             }
 
-            await _basket.Update(newBasket);
-            return Ok(newBasket);
+            var result = await _basket.Update(newBasket);
+            if (result.IsSuccessStatusCode)
+            {
+                return Ok(newBasket);
+            }
+            return BadRequest();
         }
 
         [HttpPut]
@@ -92,8 +96,13 @@ namespace Web.Shopping.HttpAggregator.Controllers
             }
 
             // Save the updated basket
-            await _basket.Update(currentBasket);
-            return Ok(currentBasket);
+            var result = await _basket.Update(currentBasket);
+
+            if (result.IsSuccessStatusCode)
+            {
+                return Ok();
+            }
+            return BadRequest();
         }
 
         [HttpPost]
@@ -124,10 +133,13 @@ namespace Web.Shopping.HttpAggregator.Controllers
             });
 
             // Step 4: Update basket
-            await _basket.Update(currentBasket);
+            var result = await _basket.Update(currentBasket);
 
-
-            return Ok();
+            if (result.IsSuccessStatusCode)
+            {
+                return Ok();
+            }
+            return BadRequest();
         }
     }
 }

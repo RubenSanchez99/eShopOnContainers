@@ -30,45 +30,34 @@ namespace Ordering.Domain.AggregatesModel.BuyerAggregate
 
         public void Create(string identity, string name)
         {
+            if (string.IsNullOrWhiteSpace(identity))
+                throw new ArgumentNullException(nameof(identity));
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentNullException(nameof(name));
+
             Emit(new BuyerCreatedDomainEvent(identity, name));
         }
 
         public void VerifyOrAddPaymentMethod(
             int cardTypeId, string alias, string cardNumber, 
             string securityNumber, string cardHolderName, DateTime expiration, OrderId orderId)
-        {
-            Console.Out.WriteLine("Card type id: " + cardTypeId);
-            Console.Out.WriteLine("Card number: " + cardNumber);
-            Console.Out.WriteLine("Card expiration: " + expiration);
-
-            Console.Out.WriteLine(JsonConvert.SerializeObject(_paymentMethods, Formatting.Indented));
-            
+        {            
             var existingPayment = _paymentMethods.Where(p => p.IsEqualTo(cardTypeId, cardNumber, expiration))
                 .SingleOrDefault();
 
             if (existingPayment != null)
             {
                 Emit(new BuyerAndPaymentMethodVerifiedDomainEvent(existingPayment.Id, orderId));
-
-                //return existingPayment;
             }
             else
             {
-                //TODO: Revisar por qué cardNumber aparece como inexistente
-                //var payment = new PaymentMethod(PaymentMethodId.New, cardTypeId, alias, cardNumber, securityNumber, cardHolderName, expiration);
-
                 var paymentMethodId = PaymentMethodId.New;
 
                 var paymentMethodAdded = new BuyerPaymentMethodAddedDomainEvent(paymentMethodId ,cardTypeId, alias, cardNumber, securityNumber, cardHolderName, expiration);
-                Console.Out.WriteLine(JsonConvert.SerializeObject(paymentMethodAdded, Formatting.Indented));
                 Emit(paymentMethodAdded);
                 
                 var paymentMethodVerified = new BuyerAndPaymentMethodVerifiedDomainEvent(paymentMethodId, orderId);
-                Console.Out.WriteLine(JsonConvert.SerializeObject(paymentMethodVerified, Formatting.Indented));
-
                 Emit(paymentMethodVerified);
-
-                //return payment;
             }
         }
 
@@ -76,8 +65,6 @@ namespace Ordering.Domain.AggregatesModel.BuyerAggregate
         {
             var identity = aggregateEvent.IdentityGuid;
             var name = aggregateEvent.BuyerName;
-            IdentityGuid = !string.IsNullOrWhiteSpace(identity) ? identity : throw new ArgumentNullException(nameof(identity));
-            BuyerName = !string.IsNullOrWhiteSpace(name) ? name : throw new ArgumentNullException(nameof(name));
         }
 
         public void Apply(BuyerPaymentMethodAddedDomainEvent aggregateEvent)

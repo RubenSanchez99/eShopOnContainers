@@ -25,8 +25,7 @@ namespace Basket.API
                 .ConfigureLogging((hostingContext, builder) =>
                 {
                     builder.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
-                    builder.AddConsole();
-                    builder.AddDebug();
+                    builder.SetMinimumLevel(LogLevel.Debug);
                 })
                 .Build();
     }

@@ -24,17 +24,20 @@ using MassTransit.RabbitMqTransport;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Catalog.API.IntegrationEvents.EventHandling;
 
 namespace Catalog.API
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             Configuration = configuration;
+            _loggerFactory = loggerFactory;
         }
 
         public IConfiguration Configuration { get; }
+        private ILoggerFactory _loggerFactory { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public IServiceProvider ConfigureServices(IServiceCollection services)
@@ -42,14 +45,14 @@ namespace Catalog.API
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             // Para EF Core
-            services.AddDbContext<CatalogContext>(options =>
+            services.AddEntityFrameworkNpgsql().AddDbContext<CatalogContext>(options =>
             {
-                options.UseSqlServer(Configuration["ConnectionString"],
-                                     sqlServerOptionsAction: sqlOptions =>
+                options.UseNpgsql(Configuration["ConnectionString"],
+                                     npgsqlOptionsAction: sqlOptions =>
                                      {
                                          sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
                                          //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
+                                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 5);
                                      });
 
                 // Changing default behavior when client evaluation occurs to throw. 
@@ -67,20 +70,43 @@ namespace Catalog.API
                     .AllowCredentials());
             });
 
+            services.Configure<CatalogSettings>(Configuration);
+
             // Configurar MassTransit
             services.AddScoped<IHostedService, MassTransitHostedService>();
 
             var builder = new ContainerBuilder(); 
 
+            services.AddScoped<OrderStatusChangedToAwaitingValidationIntegrationEventHandler>();
+            services.AddScoped<OrderStatusChangedToPaidIntegrationEventHandler>();
+
             builder.Register(c =>
             {
-                return Bus.Factory.CreateUsingRabbitMq(sbc => 
-                    sbc.Host(new Uri("rabbitmq://rabbitmq"), h =>
+                var busControl = Bus.Factory.CreateUsingRabbitMq(sbc => 
                     {
-                        h.Username("guest");
-                        h.Password("guest");
-                    })
+                        var host = sbc.Host(new Uri(Configuration["EventBusConnection"]), h =>
+                        {
+                            h.Username(Configuration["EventBusUserName"]);
+                            h.Password(Configuration["EventBusPassword"]);
+                        });
+                        sbc.ReceiveEndpoint(host, "catalog_validation_queue", e => 
+                        {
+                            e.Consumer<OrderStatusChangedToAwaitingValidationIntegrationEventHandler>(c);
+                        });
+                        sbc.ReceiveEndpoint(host, "catalog_orderpaid_queue", e => 
+                        {
+                            e.Consumer<OrderStatusChangedToPaidIntegrationEventHandler>(c);
+                        });
+                        sbc.UseExtensionsLogging(_loggerFactory);
+                    }
                 );
+                var consumeObserver = new ConsumeObserver(_loggerFactory.CreateLogger<ConsumeObserver>());
+                busControl.ConnectConsumeObserver(consumeObserver);
+
+                var sendObserver = new SendObserver(_loggerFactory.CreateLogger<SendObserver>());
+                busControl.ConnectSendObserver(sendObserver);
+
+                return busControl;
             })
             .As<IBusControl>()
             .As<IPublishEndpoint>()
@@ -108,8 +134,6 @@ namespace Catalog.API
             app.UseMvc();
 
             app.UseCors("CorsPolicy");
-
-            db.Database.Migrate();
         }
     }
 }

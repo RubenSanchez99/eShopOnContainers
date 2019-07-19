@@ -19,18 +19,8 @@ namespace Catalog.API.Infrastructure
             builder.ApplyConfiguration(new CatalogBrandEntityTypeConfiguration());
             builder.ApplyConfiguration(new CatalogTypeEntityTypeConfiguration());
             builder.ApplyConfiguration(new CatalogItemEntityTypeConfiguration());
+
+            builder.ForNpgsqlUseIdentityColumns();
         }     
-    }
-
-
-    public class CatalogContextDesignFactory : IDesignTimeDbContextFactory<CatalogContext>
-    {
-        public CatalogContext CreateDbContext(string[] args)
-        {
-            var optionsBuilder =  new DbContextOptionsBuilder<CatalogContext>()
-                .UseSqlServer("Server=tcp:127.0.0.1,5433;Initial Catalog=CapacitacionMicroservicios.CatalogDb;User Id=sa;Password=Pass@word");
-
-            return new CatalogContext(optionsBuilder.Options);
-        }
     }
 }

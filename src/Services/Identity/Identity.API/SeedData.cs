@@ -11,6 +11,7 @@ using Identity.API.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Identity.API
 {
@@ -29,8 +30,10 @@ namespace Identity.API
                 {
                     alice = new ApplicationUser
                     {
-                        Id = Guid.NewGuid().ToString(),
-                        UserName = "alice"
+                        Id = Guid.Parse("574fdb15-8641-424c-9b58-df1c07c9c882").ToString(),
+                        UserName = "alice",
+                        Email = "AliceSmith@email.com",
+                        EmailConfirmed = true
                     };
                     var result = userMgr.CreateAsync(alice, "Pass123$").Result;
                     if (!result.Succeeded)
@@ -63,8 +66,10 @@ namespace Identity.API
                 {
                     bob = new ApplicationUser
                     {
-                        Id = Guid.NewGuid().ToString(),
-                        UserName = "bob"
+                        Id = Guid.Parse("a275fcb7-3873-47ae-bb70-fe3aa46172a7").ToString(),
+                        UserName = "bob",
+                        Email = "BobSmith@email.com",
+                        EmailConfirmed = true
                     };
                     var result = userMgr.CreateAsync(bob, "Pass123$").Result;
                     if (!result.Succeeded)
@@ -80,7 +85,10 @@ namespace Identity.API
                         new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
                         new Claim(JwtClaimTypes.WebSite, "http://bob.com"),
                         new Claim(JwtClaimTypes.Address, @"{ 'street_address': 'One Hacker Way', 'locality': 'Heidelberg', 'postal_code': 69118, 'country': 'Germany' }", IdentityServer4.IdentityServerConstants.ClaimValueTypes.Json),
-                        new Claim("location", "somewhere")
+                        new Claim("location", "somewhere"),
+                        new Claim(JwtClaimTypes.Subject, bob.Id),
+                        new Claim(JwtClaimTypes.PreferredUserName, bob.UserName),
+                        new Claim(JwtRegisteredClaimNames.UniqueName, bob.UserName)
                     }).Result;
                     if (!result.Succeeded)
                     {

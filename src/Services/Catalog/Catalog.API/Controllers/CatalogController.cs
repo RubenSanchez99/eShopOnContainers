@@ -20,11 +20,13 @@ namespace Catalog.API.Controllers
     {
         private readonly CatalogContext _catalogContext;
         private readonly IPublishEndpoint _endpoint;
+        private readonly CatalogSettings _settings;
 
-        public CatalogController(CatalogContext context, IPublishEndpoint endpoint)
+        public CatalogController(CatalogContext context, IPublishEndpoint endpoint, IOptionsSnapshot<CatalogSettings> settings)
         {
             _endpoint = endpoint;
             _catalogContext = context ?? throw new ArgumentNullException(nameof(context));
+            _settings = settings.Value;
             ((DbContext)context).ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
@@ -47,6 +49,8 @@ namespace Catalog.API.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
+            itemsOnPage = ChangeUriPlaceholder(itemsOnPage);
+
             var model = new PaginatedItemsViewModel<CatalogItem>(
                 pageIndex, pageSize, totalItems, itemsOnPage);
 
@@ -67,6 +71,8 @@ namespace Catalog.API.Controllers
                 .Select(id => id.Value);
 
             var items = _catalogContext.CatalogItems.Where(ci => idsToSelect.Contains(ci.Id)).ToList();
+
+            items = ChangeUriPlaceholder(items);
 
             return Ok(items);
         }
@@ -105,6 +111,8 @@ namespace Catalog.API.Controllers
                 .Take(pageSize)
                 .ToListAsync();
 
+            itemsOnPage = ChangeUriPlaceholder(itemsOnPage);
+
             var model = new PaginatedItemsViewModel<CatalogItem>(
                 pageIndex, pageSize, totalItems, itemsOnPage);
 
@@ -135,6 +143,8 @@ namespace Catalog.API.Controllers
                 .Skip(pageSize * pageIndex)
                 .Take(pageSize)
                 .ToListAsync();
+
+            itemsOnPage = ChangeUriPlaceholder(itemsOnPage);
 
             var model = new PaginatedItemsViewModel<CatalogItem>(
                 pageIndex, pageSize, totalItems, itemsOnPage);
@@ -238,6 +248,19 @@ namespace Catalog.API.Controllers
             await _catalogContext.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        private List<CatalogItem> ChangeUriPlaceholder(List<CatalogItem> items)
+        {
+            var baseUri = _settings.PicBaseUrl;
+            Console.WriteLine("BaseUri: " + baseUri);
+
+            foreach (var item in items)
+            {
+                item.FillProductUrl(baseUri);
+            }
+
+            return items;
         }
     }
 }

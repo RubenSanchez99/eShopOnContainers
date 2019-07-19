@@ -11,7 +11,8 @@ namespace Catalog.API.Infrastructure.EntityConfigurations
             builder.ToTable("Catalog");
 
             builder.Property(ci => ci.Id)
-                .ForSqlServerUseSequenceHiLo("catalog_hilo")
+                .ForNpgsqlUseSequenceHiLo("catalog_hilo")
+                .ValueGeneratedOnAdd()
                 .IsRequired();
 
             builder.Property(ci => ci.Name)

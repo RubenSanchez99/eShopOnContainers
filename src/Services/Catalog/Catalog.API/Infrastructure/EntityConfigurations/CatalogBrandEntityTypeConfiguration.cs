@@ -13,7 +13,8 @@ namespace Catalog.API.Infrastructure.EntityConfigurations
             builder.HasKey(ci => ci.Id);
 
             builder.Property(ci => ci.Id)
-               .ForSqlServerUseSequenceHiLo("catalog_brand_hilo")
+               .ForNpgsqlUseSequenceHiLo("catalog_brand_hilo")
+               .ValueGeneratedOnAdd()
                .IsRequired();
 
             builder.Property(cb => cb.Brand)

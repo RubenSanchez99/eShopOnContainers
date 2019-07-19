@@ -29,11 +29,11 @@ namespace Web.Shopping.HttpAggregator.Services
             return basket;
         }
 
-        public async Task Update(BasketData currentBasket)
+        public async Task<HttpResponseMessage> Update(BasketData currentBasket)
         {
             var basketContent = new StringContent(JsonConvert.SerializeObject(currentBasket), System.Text.Encoding.UTF8, "application/json");
 
-            var data = await _apiClient.PostAsync(_urls.Basket + UrlsConfig.BasketOperations.UpdateBasket(), basketContent);
+            return await _apiClient.PostAsync(_urls.Basket + UrlsConfig.BasketOperations.UpdateBasket(), basketContent);
         }
     }
 }
